@@ -1,141 +1,32 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard hidrometeorológico</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-<link id="leafletCss" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-:root{
-  --bg:#1b1d1c;
-  --surface:#242725;
-  --surface-2:#2b2e2c;
-  --surface-3:#303331;
-  --border:#4a4d4a;
-  --text:#f2f2ef;
-  --muted:#b9bab5;
-  --muted-2:#8e918c;
-  --blue:#1f6aa5;
-  --blue-soft:#6fa8dc;
-  --green:#147563;
-  --orange:#c78315;
-  --orange-soft:#7f5a24;
-  --red-bg:#6f282b;
-  --red-text:#ff9b98;
-  --amber-bg:#5b5009;
-  --amber-text:#e5b935;
-  --radius:12px;
-  --shadow:0 18px 40px rgba(0,0,0,.22);
-}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%}
-body{
-  font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(199,131,21,.08), transparent 28%),
-    radial-gradient(circle at 90% 12%, rgba(31,106,165,.08), transparent 24%),
-    var(--bg);
-  color:var(--text);
-}
-.app-shell{width:min(1220px,calc(100% - 28px));margin:0 auto;padding:24px 0 30px}
+body{font-family:var(--font-sans);color:var(--color-text-primary)}
 h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
-.kpi{
-  background:linear-gradient(180deg,var(--surface),#222522);
-  border:1px solid rgba(255,255,255,.035);
-  border-radius:10px;
-  padding:14px 16px;
-  box-shadow:0 10px 24px rgba(0,0,0,.12);
-}
-.kpi .lbl{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.055em;font-weight:800;display:flex;align-items:center;gap:5px}
-.kpi .lbl i{font-size:15px;color:var(--muted)}
-.kpi .val{font-size:25px;font-weight:850;line-height:1.05;letter-spacing:.02em}
-.kpi .sub{font-size:12px;color:var(--muted-2);margin-top:5px;font-weight:650}
-.card{
-  background:linear-gradient(180deg,var(--surface-2),#282b29);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:18px 20px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
-}
-.card-title{font-size:15px;font-weight:850;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.075em}
-.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-.tab{
-  min-width:145px;
-  font-size:14px;
-  font-weight:800;
-  padding:11px 16px;
-  border-radius:9px;
-  border:1px solid var(--border);
-  cursor:pointer;
-  background:#1f2220;
-  color:var(--text);
-  transition:background .15s ease,border-color .15s ease,transform .15s ease;
-}
-.tab:hover{border-color:#6b6e68;transform:translateY(-1px)}
-.tab.active{background:#242825;border-color:#70736d;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
-.alert{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border-radius:10px;margin-bottom:8px;font-size:14px;font-weight:650;line-height:1.2}
-.alert strong{display:block;font-size:15px;font-weight:850;margin-bottom:2px}
-.alert.red{background:var(--red-bg);color:var(--red-text)}
-.alert.amber{background:var(--amber-bg);color:var(--amber-text)}
-.alert i{font-size:21px;margin-top:1px;flex-shrink:0;opacity:.98}
-.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:12px;color:var(--muted);font-weight:700}
-.legend span{display:flex;align-items:center;gap:6px}
-.legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
-#anomalias-list{scrollbar-color:#9c9c9c transparent;scrollbar-width:thin;padding-right:2px}
-#anomalias-list::-webkit-scrollbar{width:8px} #anomalias-list::-webkit-scrollbar-thumb{background:#9c9c9c;border-radius:8px}
-canvas{filter:saturate(.96)}
-@media (max-width:900px){.grid4{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.tab{flex:1;min-width:140px}.app-shell{width:min(100% - 20px,760px);padding-top:14px}}
-@media (max-width:520px){.grid4{grid-template-columns:1fr}.card{padding:14px}.kpi .val{font-size:23px}.tab{min-width:100%}}
-
-.geo-panel{display:none}
-.geo-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}
-.map-shell{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
-.geo-map{width:100%;height:390px;min-height:360px;background:#1d2220}
-.leaflet-container{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:#1d2220;color:#1b1d1c}
-.leaflet-control-zoom a{background:#1f2220;color:#fff;border-color:var(--border)}
-.leaflet-control-zoom a:hover{background:#2b2e2c;color:#fff}
-.leaflet-control-attribution{background:rgba(27,29,28,.82)!important;color:#d6d6d0!important}
-.leaflet-control-attribution a{color:#9cc8ee!important}
-.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#1f2220;color:#f2f2ef;border:1px solid var(--border)}
-.leaflet-popup-content{font-size:13px;line-height:1.35}
-.station-marker{position:relative;width:28px;height:28px;background:#e5b935;border:3px solid #1f2220;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 8px 24px rgba(0,0,0,.65)}
-.station-marker:after{content:"";position:absolute;width:10px;height:10px;border-radius:50%;background:#1f2220;left:6px;top:6px}
-.map-status{position:absolute;left:14px;bottom:14px;z-index:500;background:rgba(27,29,28,.88);border:1px solid var(--border);border-radius:10px;padding:9px 11px;color:var(--muted);font-size:12px;font-weight:800;box-shadow:0 8px 22px rgba(0,0,0,.22);max-width:70%;display:none}
-.geo-actions{position:absolute;right:14px;bottom:14px;z-index:500;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.geo-actions a{color:#fff;text-decoration:none;border:1px solid var(--border);background:rgba(31,34,32,.94);border-radius:9px;padding:9px 11px;font-size:12px;font-weight:850;box-shadow:0 8px 22px rgba(0,0,0,.28)}
-.map-help{position:absolute;left:14px;top:14px;z-index:500;background:rgba(27,29,28,.86);border:1px solid var(--border);border-radius:10px;padding:9px 11px;color:var(--muted);font-size:12px;font-weight:800;box-shadow:0 8px 22px rgba(0,0,0,.22)}
-.station-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.fact{background:#202320;border:1px solid rgba(255,255,255,.045);border-radius:10px;padding:12px}.fact .f-lbl{font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;font-weight:850}.fact .f-val{margin-top:4px;font-size:17px;font-weight:900;color:#fff}.assistant-box{height:100%;display:flex;flex-direction:column}.chat-window{background:#202320;border:1px solid rgba(255,255,255,.045);border-radius:12px;padding:12px;height:285px;overflow:auto;margin-bottom:10px}.msg{padding:10px 12px;border-radius:10px;margin-bottom:9px;font-size:13px;line-height:1.45}.msg.bot{background:#2b2e2c;color:var(--text);border:1px solid rgba(255,255,255,.04)}.msg.user{background:#1f3c55;color:#fff;margin-left:32px}.quick-questions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.quick-questions button{border:1px solid var(--border);background:#1f2220;color:var(--text);border-radius:999px;padding:8px 10px;font-size:12px;font-weight:800;cursor:pointer}.chat-input{display:flex;gap:8px}.chat-input input{flex:1;background:#1f2220;color:#fff;border:1px solid var(--border);border-radius:9px;padding:12px 12px;font-size:14px;outline:none}.chat-input button{background:#c78315;color:#121411;border:0;border-radius:9px;padding:0 16px;font-weight:950;cursor:pointer}
-@media (max-width:850px){.geo-grid{grid-template-columns:1fr}.station-facts{grid-template-columns:1fr}.geo-map{min-height:320px}}
-
-
-.report-panel{display:none}
-.report-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;justify-content:space-between}
-.report-toolbar .left{display:flex;gap:10px;flex-wrap:wrap}
-.report-btn{border:1px solid var(--border);background:#1f2220;color:#fff;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
-.report-btn.primary{background:#c78315;color:#121411;border-color:#c78315}
-.report-btn:hover{transform:translateY(-1px)}
-.report-note{font-size:12px;color:var(--muted);font-weight:700;line-height:1.35;max-width:560px}
-.report-preview{display:none}
-.report-cover{background:linear-gradient(135deg,#202320,#2b2e2c);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow)}
-.report-cover h1{font-size:26px;line-height:1.1;margin-bottom:8px;color:#fff}.report-cover p{color:var(--muted);font-weight:700;line-height:1.45}.report-badge{display:inline-flex;align-items:center;gap:7px;background:#1f2220;border:1px solid var(--border);border-radius:999px;padding:7px 10px;color:#e5b935;font-size:12px;font-weight:900;margin-bottom:12px}
-.report-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}.report-kpi{background:#202320;border:1px solid rgba(255,255,255,.055);border-radius:12px;padding:12px}.report-kpi .rk-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2);font-weight:900}.report-kpi .rk-val{font-size:21px;color:#fff;font-weight:950;margin-top:4px}.report-kpi .rk-sub{font-size:11px;color:var(--muted);font-weight:700;margin-top:3px}
-.report-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.report-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.report-section{background:linear-gradient(180deg,var(--surface-2),#282b29);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow)}.report-section h3{font-size:15px;text-transform:uppercase;letter-spacing:.075em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}.report-section p,.report-section li{font-size:14px;line-height:1.55;color:#e6e6e0;font-weight:650}.report-section ul{padding-left:18px;margin-top:8px}.report-chart{height:240px;position:relative}.report-chart.small{height:210px}.report-table{width:100%;border-collapse:collapse;font-size:13px;font-weight:650;overflow:hidden;border-radius:10px}.report-table th,.report-table td{border-bottom:1px solid rgba(255,255,255,.075);padding:10px 9px;text-align:left;vertical-align:top}.report-table th{color:#e5b935;text-transform:uppercase;font-size:11px;letter-spacing:.055em;background:#202320}.status-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:950}.status-normal{background:#143d36;color:#9af0d0}.status-watch{background:#5b5009;color:#e5b935}.status-alert{background:#6f282b;color:#ff9b98}.recommendation{background:#202320;border:1px solid rgba(255,255,255,.05);border-left:4px solid #c78315;border-radius:10px;padding:12px;margin-top:8px}.report-disclaimer{color:var(--muted);font-size:12px;line-height:1.45;font-weight:700}.report-actions-inline{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-@media (max-width:1050px){.report-kpis{grid-template-columns:repeat(2,1fr)}.report-grid2,.report-grid3{grid-template-columns:1fr}}
-@media print{body{background:#fff;color:#111}.app-shell{width:100%;padding:0}.grid4,.tabs,#mainDashboardPanel,#geoPanel,.report-toolbar{display:none!important}.report-panel,.report-preview{display:block!important}.report-cover,.report-section{box-shadow:none;border:1px solid #ddd;background:#fff;color:#111;break-inside:avoid}.report-cover h1,.report-kpi .rk-val{color:#111}.report-section h3,.report-section p,.report-section li,.report-table td{color:#111}.report-kpi{background:#fff;border:1px solid #ddd}.report-table th{background:#f4f4f4;color:#111}.report-chart{height:220px}.card{box-shadow:none}}
-
+.kpi{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.kpi .lbl{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.kpi .val{font-size:22px;font-weight:500;line-height:1.1}
+.kpi .sub{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);cursor:pointer;background:transparent;color:var(--color-text-secondary)}
+.tab.active{background:var(--color-background-info);color:var(--color-text-info);border-color:transparent}
+.alert{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-radius:var(--border-radius-md);margin-bottom:6px;font-size:12px}
+.alert.red{background:var(--color-background-danger);color:var(--color-text-danger)}
+.alert.amber{background:var(--color-background-warning);color:var(--color-text-warning)}
+.alert i{font-size:16px;margin-top:1px;flex-shrink:0}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px;font-size:11px;color:var(--color-text-secondary)}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
 </style>
-</head>
-<body>
-<main class="app-shell">
 
+<h2 class="sr-only">Dashboard de estación hidrometeorológica — datos de Dic 2025 a May 2026, incluyendo temperatura, humedad, nivel hídrico, lluvia y voltaje.</h2>
 
-<h2 class="sr-only">Dashboard de estación hidrometeorológica — datos de Dic 2025 a May 2026, incluyendo temperatura, humedad, nivel hídrico y lluvia.</h2>
-
-<div class="dashboard-content">
+<div style="padding:12px 0 8px">
 
 <div class="grid4">
   <div class="kpi"><div class="lbl"><i class="ti ti-temperature" aria-hidden="true"></i> Temperatura</div><div class="val">7.9°C</div><div class="sub">min −1.4 · max 19.5</div></div>
@@ -145,20 +36,18 @@ canvas{filter:saturate(.96)}
 </div>
 
 <div class="tabs" id="chart-tabs">
-  <button class="tab active" onclick="setTab('nivel', this)">Nivel hídrico</button>
-  <button class="tab" onclick="setTab('temp', this)">Temperatura</button>
-  <button class="tab" onclick="setTab('lluvia', this)">Lluvia diaria</button>
-  <button class="tab" onclick="setTab('geo', this)">Geoasistente</button>
-  <button class="tab" onclick="setTab('report', this)">Reporte hidrológico</button>
+  <button class="tab active" onclick="setTab('nivel')">Nivel hídrico</button>
+  <button class="tab" onclick="setTab('temp')">Temperatura</button>
+  <button class="tab" onclick="setTab('lluvia')">Lluvia diaria</button>
+  <button class="tab" onclick="setTab('voltaje')">Voltaje</button>
 </div>
 
-<section id="mainDashboardPanel">
 <div class="card" style="margin-bottom:14px">
   <div class="card-title" id="main-title">Nivel hídrico diario (mm)</div>
   <div class="legend" id="main-legend">
-    <span><span class="legend-dot" style="background:#1f6aa5"></span>Nivel medio</span>
-    <span><span class="legend-dot" style="background:#6fa8dc"></span>Rango min/máx</span>
-    <span><span class="legend-dot" style="background:#ff716e;border-radius:50%"></span>Anomalía (&gt;2σ)</span>
+    <span><span class="legend-dot" style="background:#185FA5"></span>Nivel medio</span>
+    <span><span class="legend-dot" style="background:#B5D4F4"></span>Rango min/máx</span>
+    <span><span class="legend-dot" style="background:#E24B4A;border-radius:50%"></span>Anomalía (&gt;2σ)</span>
   </div>
   <div style="position:relative;width:100%;height:220px"><canvas id="mainChart" role="img" aria-label="Serie temporal del nivel hídrico diario de diciembre 2025 a mayo 2026"></canvas></div>
 </div>
@@ -167,9 +56,9 @@ canvas{filter:saturate(.96)}
   <div class="card" style="margin-bottom:0">
     <div class="card-title">Correlación temp · humedad</div>
     <div class="legend">
-      <span><span class="legend-dot" style="background:#1f6aa5"></span>Nivel bajo (&lt;900mm)</span>
-      <span><span class="legend-dot" style="background:#147563"></span>Nivel alto (&gt;1000mm)</span>
-      <span><span class="legend-dot" style="background:#8e918c"></span>Medio</span>
+      <span><span class="legend-dot" style="background:#185FA5"></span>Nivel bajo (&lt;900mm)</span>
+      <span><span class="legend-dot" style="background:#0F6E56"></span>Nivel alto (&gt;1000mm)</span>
+      <span><span class="legend-dot" style="background:#888780"></span>Medio</span>
     </div>
     <div style="position:relative;width:100%;height:190px"><canvas id="scatterChart" role="img" aria-label="Dispersión de temperatura vs humedad coloreada por nivel hídrico"></canvas></div>
   </div>
@@ -178,245 +67,15 @@ canvas{filter:saturate(.96)}
     <div id="anomalias-list" style="overflow-y:auto;max-height:220px"></div>
   </div>
 </div>
-</section>
-
-<section id="geoPanel" class="geo-panel">
-  <div class="geo-grid">
-    <div class="card" style="margin-bottom:0">
-      <div class="card-title"><i class="ti ti-map-pin" aria-hidden="true"></i> Estación HidroTambo</div>
-      <div class="map-shell">
-        <div id="hidrotamboMap" class="geo-map" aria-label="Mapa interactivo OpenStreetMap de la Estación HidroTambo"></div>
-        <div class="map-help"><i class="ti ti-hand-move" aria-hidden="true"></i> Mueva el mapa, acerque o aleje</div>
-        <div id="mapStatus" class="map-status">Cargando mapa interactivo...</div>
-        <div class="geo-actions">
-          <a href="https://www.google.com/maps?q=-2.429139,-78.871417" target="_blank" rel="noopener">Abrir en Google Maps</a>
-          <a href="https://www.openstreetmap.org/?mlat=-2.429139&amp;mlon=-78.871417#map=15/-2.429139/-78.871417" target="_blank" rel="noopener">Abrir en OSM</a>
-        </div>
-      </div>
-      <div class="station-facts">
-        <div class="fact"><div class="f-lbl">Latitud</div><div class="f-val">-2.429139</div></div>
-        <div class="fact"><div class="f-lbl">Longitud</div><div class="f-val">-78.871417</div></div>
-        <div class="fact"><div class="f-lbl">Período de datos</div><div class="f-val">161 días</div></div>
-        <div class="fact"><div class="f-lbl">Variables</div><div class="f-val">Nivel · Temp · Lluvia · Humedad</div></div>
-      </div>
-    </div>
-
-    <div class="card assistant-box" style="margin-bottom:0">
-      <div class="card-title"><i class="ti ti-message-chatbot" aria-hidden="true"></i> Geoasistente de la estación</div>
-      <div id="chatWindow" class="chat-window">
-        <div class="msg bot">Hola, soy el geoasistente de <strong>Estación HidroTambo</strong>. Puedo responder sobre ubicación, coordenadas, resumen hidrometeorológico, anomalías y recomendaciones de monitoreo con base en este dashboard.</div>
-      </div>
-      <div class="quick-questions">
-        <button onclick="askGeo('ubicacion')">Ubicación</button>
-        <button onclick="askGeo('resumen')">Resumen</button>
-        <button onclick="askGeo('anomalias')">Anomalías</button>
-        <button onclick="askGeo('lluvia')">Lluvia</button>
-        <button onclick="askGeo('nivel')">Nivel</button>
-      </div>
-      <div class="chat-input">
-        <input id="geoQuestion" type="text" placeholder="Pregunte sobre la estación, anomalías, nivel o lluvia..." onkeydown="if(event.key==='Enter') askGeo()">
-        <button onclick="askGeo()">Consultar</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<section id="reportPanel" class="report-panel">
-  <div class="card">
-    <div class="card-title"><i class="ti ti-file-analytics" aria-hidden="true"></i> Generador de reporte hidrológico</div>
-    <div class="report-toolbar">
-      <div class="left">
-        <button class="report-btn primary" onclick="generateHydroReport()"><i class="ti ti-report-analytics"></i> Generar reporte hidrológico</button>
-        <button id="printReportBtn" class="report-btn" onclick="printHydroReport()" disabled><i class="ti ti-printer"></i> Exportar / Imprimir PDF</button>
-        <button id="downloadReportBtn" class="report-btn" onclick="downloadHydroReportHTML()" disabled><i class="ti ti-download"></i> Descargar HTML</button>
-      </div>
-      <div class="report-note">Primero se genera una previsualización técnica con indicadores, interpretación automática, gráficas y tabla de eventos. Luego puede exportarse como PDF desde el navegador o descargarse como HTML.</div>
-    </div>
-  </div>
-  <div id="reportPreview" class="report-preview">
-    <div class="report-cover">
-      <span class="report-badge"><i class="ti ti-map-pin"></i> Estación HidroTambo · Reporte automático</span>
-      <h1>Reporte hidrológico automático</h1>
-      <p id="reportMeta">Monitoreo hidrometeorológico con nivel hídrico, lluvia, temperatura y humedad.</p>
-      <div id="reportStatusLine"></div>
-    </div>
-
-    <div id="reportKpis" class="report-kpis"></div>
-
-    <div class="report-section">
-      <h3><i class="ti ti-clipboard-text"></i> 1. Resumen ejecutivo</h3>
-      <p id="executiveSummary"></p>
-    </div>
-
-    <div class="report-grid2">
-      <div class="report-section">
-        <h3><i class="ti ti-cloud-rain"></i> 2. Lluvia diaria y acumulada</h3>
-        <div class="report-chart"><canvas id="reportRainChart"></canvas></div>
-      </div>
-      <div class="report-section">
-        <h3><i class="ti ti-waves"></i> 3. Hidrograma de nivel</h3>
-        <div class="report-chart"><canvas id="reportLevelChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="report-grid2">
-      <div class="report-section">
-        <h3><i class="ti ti-arrows-exchange"></i> 4. Relación lluvia–nivel</h3>
-        <p id="rainLevelText"></p>
-        <div class="report-chart small"><canvas id="reportRainLevelChart"></canvas></div>
-      </div>
-      <div class="report-section">
-        <h3><i class="ti ti-chart-area-line"></i> 5. Curva de permanencia del nivel</h3>
-        <p class="report-disclaimer">La curva ordena los niveles de mayor a menor para visualizar la frecuencia relativa de permanencia de condiciones altas y bajas.</p>
-        <div class="report-chart small"><canvas id="reportDurationChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="report-grid2">
-      <div class="report-section">
-        <h3><i class="ti ti-temperature"></i> 6. Temperatura</h3>
-        <div class="report-chart"><canvas id="reportTempChart"></canvas></div>
-      </div>
-      <div class="report-section">
-        <h3><i class="ti ti-alert-triangle"></i> 7. Anomalías y eventos relevantes</h3>
-        <div id="reportAnomalyTable"></div>
-      </div>
-    </div>
-
-    <div class="report-section">
-      <h3><i class="ti ti-stethoscope"></i> 8. Diagnóstico hidrológico automático</h3>
-      <p id="hydroDiagnosis"></p>
-      <div id="hydroRecommendations"></div>
-    </div>
-
-    <div class="report-section">
-      <h3><i class="ti ti-info-circle"></i> 9. Nota técnica</h3>
-      <p class="report-disclaimer">Este reporte analiza nivel hídrico, lluvia, temperatura y humedad. No estima caudal, porque para ello se requiere una curva nivel–caudal o curva de gasto calibrada con aforos de campo. Los umbrales de alerta son exploratorios y deben ajustarse con mayor historial y validación local.</p>
-    </div>
-  </div>
-</section>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const D = {"stats":{"total_days":161,"total_records":45315,"t_mean":7.9,"t_min":-1.4,"t_max":19.5,"h_mean":79.8,"n_mean":936.9,"n_max":1212.2,"total_lluvia":485.6,"max_intensidad":32.4,"v_mean":13.429,"v_min":12.589,"v_max":15.095,"lluvia_dias":100},"daily":[{"d":"2025-12-17","t":7.11,"tmin":5.2,"tmax":11.1,"h":90.63,"n":907.89,"nmin":900.65,"nmax":919.12,"r":0.0,"v":13.339,"vmin":12.805},{"d":"2025-12-18","t":7.39,"tmin":4.1,"tmax":12.9,"h":89.0,"n":899.34,"nmin":894.79,"nmax":906.3,"r":2.2,"v":13.415,"vmin":12.676},{"d":"2025-12-19","t":7.35,"tmin":1.6,"tmax":14.6,"h":83.27,"n":891.42,"nmin":882.24,"nmax":908.21,"r":0.0,"v":13.443,"vmin":12.696},{"d":"2025-12-20","t":8.47,"tmin":4.0,"tmax":16.0,"h":80.81,"n":882.33,"nmin":873.65,"nmax":890.49,"r":0.5,"v":13.46,"vmin":12.737},{"d":"2025-12-21","t":7.56,"tmin":0.8,"tmax":16.2,"h":80.33,"n":873.81,"nmin":864.32,"nmax":881.11,"r":0.0,"v":13.437,"vmin":12.695},{"d":"2025-12-22","t":8.2,"tmin":3.0,"tmax":15.6,"h":78.48,"n":869.0,"nmin":859.28,"nmax":878.76,"r":0.0,"v":13.465,"vmin":12.702},{"d":"2025-12-23","t":8.09,"tmin":1.0,"tmax":19.5,"h":72.07,"n":864.11,"nmin":854.85,"nmax":872.9,"r":0.0,"v":13.372,"vmin":12.676},{"d":"2025-12-24","t":6.5,"tmin":-1.4,"tmax":18.0,"h":62.68,"n":858.57,"nmin":852.4,"nmax":867.03,"r":0.0,"v":13.406,"vmin":12.672},{"d":"2025-12-25","t":8.41,"tmin":0.4,"tmax":17.3,"h":69.82,"n":853.93,"nmin":847.05,"nmax":863.35,"r":0.0,"v":13.407,"vmin":12.688},{"d":"2025-12-26","t":7.26,"tmin":-0.7,"tmax":17.5,"h":69.85,"n":849.14,"nmin":842.64,"nmax":858.79,"r":0.0,"v":13.409,"vmin":12.682},{"d":"2025-12-27","t":6.94,"tmin":-1.1,"tmax":18.2,"h":71.26,"n":845.48,"nmin":837.49,"nmax":851.82,"r":0.0,"v":13.365,"vmin":12.651},{"d":"2025-12-28","t":6.97,"tmin":1.3,"tmax":13.8,"h":74.26,"n":842.66,"nmin":833.64,"nmax":850.23,"r":0.0,"v":13.423,"vmin":12.697},{"d":"2025-12-29","t":7.43,"tmin":0.7,"tmax":13.9,"h":72.47,"n":838.62,"nmin":832.43,"nmax":846.12,"r":0.0,"v":13.403,"vmin":12.671},{"d":"2025-12-30","t":7.76,"tmin":5.1,"tmax":12.7,"h":77.54,"n":834.94,"nmin":827.73,"nmax":841.53,"r":0.0,"v":13.465,"vmin":12.73},{"d":"2025-12-31","t":7.87,"tmin":5.5,"tmax":11.8,"h":79.38,"n":835.03,"nmin":829.74,"nmax":841.55,"r":0.0,"v":13.478,"vmin":12.739},{"d":"2026-01-01","t":7.78,"tmin":3.5,"tmax":11.7,"h":81.22,"n":834.85,"nmin":828.33,"nmax":839.85,"r":0.1,"v":13.467,"vmin":12.711},{"d":"2026-01-02","t":7.99,"tmin":3.7,"tmax":16.7,"h":77.85,"n":839.12,"nmin":826.79,"nmax":861.65,"r":6.8,"v":13.438,"vmin":12.694},{"d":"2026-01-03","t":8.39,"tmin":3.7,"tmax":15.7,"h":78.18,"n":847.47,"nmin":839.72,"nmax":852.93,"r":0.1,"v":13.469,"vmin":12.683},{"d":"2026-01-04","t":6.23,"tmin":1.0,"tmax":14.6,"h":82.0,"n":850.92,"nmin":843.96,"nmax":865.89,"r":3.8,"v":13.442,"vmin":12.692},{"d":"2026-01-05","t":7.55,"tmin":0.7,"tmax":13.6,"h":78.91,"n":848.28,"nmin":843.12,"nmax":855.38,"r":0.0,"v":13.452,"vmin":12.65},{"d":"2026-01-06","t":7.59,"tmin":1.9,"tmax":16.0,"h":79.92,"n":841.63,"nmin":836.73,"nmax":846.38,"r":0.0,"v":13.46,"vmin":12.708},{"d":"2026-01-07","t":7.46,"tmin":1.3,"tmax":17.7,"h":77.01,"n":837.37,"nmin":827.11,"nmax":850.14,"r":0.0,"v":13.378,"vmin":12.683},{"d":"2026-01-08","t":8.27,"tmin":2.0,"tmax":17.6,"h":80.24,"n":832.8,"nmin":822.89,"nmax":840.94,"r":0.1,"v":13.465,"vmin":12.69},{"d":"2026-01-09","t":7.82,"tmin":3.9,"tmax":11.7,"h":83.53,"n":832.01,"nmin":826.94,"nmax":835.63,"r":1.0,"v":13.471,"vmin":12.692},{"d":"2026-01-10","t":7.58,"tmin":1.7,"tmax":13.4,"h":85.22,"n":831.53,"nmin":823.32,"nmax":835.59,"r":2.6,"v":13.438,"vmin":12.667},{"d":"2026-01-11","t":8.0,"tmin":6.1,"tmax":12.9,"h":86.77,"n":832.88,"nmin":824.37,"nmax":836.59,"r":2.2,"v":13.438,"vmin":12.668},{"d":"2026-01-12","t":8.03,"tmin":5.6,"tmax":13.8,"h":87.11,"n":841.18,"nmin":829.74,"nmax":855.06,"r":11.1,"v":13.477,"vmin":12.756},{"d":"2026-01-13","t":7.88,"tmin":5.7,"tmax":12.4,"h":86.62,"n":866.31,"nmin":842.06,"nmax":904.09,"r":11.9,"v":13.462,"vmin":12.742},{"d":"2026-01-14","t":8.33,"tmin":4.4,"tmax":14.3,"h":83.64,"n":893.35,"nmin":887.24,"nmax":899.64,"r":1.6,"v":13.468,"vmin":12.703},{"d":"2026-01-15","t":8.3,"tmin":5.0,"tmax":14.5,"h":85.12,"n":890.2,"nmin":879.55,"nmax":897.33,"r":6.7,"v":13.453,"vmin":12.714},{"d":"2026-01-16","t":8.26,"tmin":2.7,"tmax":15.5,"h":79.66,"n":884.38,"nmin":876.5,"nmax":894.01,"r":0.8,"v":13.448,"vmin":12.668},{"d":"2026-01-17","t":8.17,"tmin":5.3,"tmax":12.7,"h":78.98,"n":873.24,"nmin":863.73,"nmax":879.54,"r":0.4,"v":13.482,"vmin":12.713},{"d":"2026-01-18","t":8.88,"tmin":4.1,"tmax":17.1,"h":71.11,"n":864.04,"nmin":854.75,"nmax":870.14,"r":0.0,"v":13.452,"vmin":12.709},{"d":"2026-01-19","t":8.66,"tmin":2.9,"tmax":16.3,"h":77.98,"n":854.56,"nmin":844.22,"nmax":863.03,"r":0.5,"v":13.44,"vmin":12.711},{"d":"2026-01-20","t":8.01,"tmin":1.4,"tmax":18.5,"h":80.93,"n":852.73,"nmin":835.9,"nmax":869.88,"r":7.7,"v":13.445,"vmin":12.685},{"d":"2026-01-21","t":8.1,"tmin":2.6,"tmax":14.5,"h":82.66,"n":847.96,"nmin":839.46,"nmax":856.98,"r":0.6,"v":13.467,"vmin":12.684},{"d":"2026-01-22","t":7.51,"tmin":5.2,"tmax":10.4,"h":84.17,"n":847.28,"nmin":845.03,"nmax":849.97,"r":1.4,"v":13.453,"vmin":12.692},{"d":"2026-01-23","t":7.49,"tmin":5.4,"tmax":12.8,"h":85.88,"n":872.84,"nmin":833.47,"nmax":926.83,"r":9.7,"v":13.447,"vmin":12.662},{"d":"2026-01-24","t":8.13,"tmin":5.8,"tmax":14.4,"h":86.68,"n":893.2,"nmin":884.92,"nmax":912.38,"r":8.0,"v":13.475,"vmin":12.742},{"d":"2026-01-25","t":7.44,"tmin":4.8,"tmax":12.4,"h":88.32,"n":918.39,"nmin":907.96,"nmax":932.56,"r":4.6,"v":13.418,"vmin":12.725},{"d":"2026-01-26","t":7.48,"tmin":2.5,"tmax":12.4,"h":86.71,"n":939.14,"nmin":911.74,"nmax":970.7,"r":9.5,"v":13.465,"vmin":12.667},{"d":"2026-01-27","t":7.91,"tmin":2.7,"tmax":15.4,"h":85.56,"n":973.34,"nmin":955.09,"nmax":986.51,"r":6.1,"v":13.476,"vmin":12.695},{"d":"2026-01-28","t":7.69,"tmin":5.4,"tmax":12.3,"h":85.36,"n":998.37,"nmin":968.57,"nmax":1009.35,"r":6.9,"v":13.409,"vmin":12.704},{"d":"2026-01-29","t":7.17,"tmin":3.7,"tmax":12.1,"h":87.23,"n":995.8,"nmin":975.84,"nmax":1010.89,"r":13.8,"v":13.413,"vmin":12.648},{"d":"2026-01-30","t":7.56,"tmin":2.6,"tmax":13.6,"h":80.29,"n":990.24,"nmin":968.69,"nmax":1007.56,"r":0.0,"v":13.476,"vmin":12.686},{"d":"2026-01-31","t":8.09,"tmin":4.3,"tmax":13.3,"h":83.34,"n":958.79,"nmin":949.79,"nmax":970.76,"r":3.3,"v":13.43,"vmin":12.718},{"d":"2026-02-01","t":7.64,"tmin":6.4,"tmax":10.2,"h":89.94,"n":982.98,"nmin":945.05,"nmax":1057.56,"r":13.3,"v":13.449,"vmin":12.667},{"d":"2026-02-02","t":7.39,"tmin":4.3,"tmax":12.0,"h":88.17,"n":1153.77,"nmin":1054.63,"nmax":1212.2,"r":12.9,"v":13.422,"vmin":12.648},{"d":"2026-02-03","t":7.63,"tmin":2.6,"tmax":12.8,"h":86.46,"n":1122.81,"nmin":1082.56,"nmax":1168.35,"r":13.8,"v":13.462,"vmin":12.666},{"d":"2026-02-04","t":6.85,"tmin":2.7,"tmax":11.7,"h":85.39,"n":1141.01,"nmin":1101.73,"nmax":1176.84,"r":6.4,"v":13.458,"vmin":12.651},{"d":"2026-02-05","t":7.5,"tmin":1.7,"tmax":14.1,"h":80.42,"n":1114.69,"nmin":1072.75,"nmax":1162.83,"r":0.0,"v":13.464,"vmin":12.677},{"d":"2026-02-06","t":7.42,"tmin":3.0,"tmax":16.1,"h":82.19,"n":1057.06,"nmin":1039.5,"nmax":1076.34,"r":6.8,"v":13.445,"vmin":12.708},{"d":"2026-02-07","t":6.81,"tmin":4.9,"tmax":9.8,"h":88.31,"n":1043.93,"nmin":1037.96,"nmax":1050.72,"r":3.8,"v":13.4,"vmin":12.672},{"d":"2026-02-08","t":7.78,"tmin":3.0,"tmax":12.9,"h":81.72,"n":1017.18,"nmin":996.5,"nmax":1040.86,"r":0.1,"v":13.457,"vmin":12.664},{"d":"2026-02-09","t":8.48,"tmin":3.0,"tmax":15.1,"h":77.85,"n":981.41,"nmin":966.16,"nmax":997.88,"r":0.9,"v":13.463,"vmin":12.699},{"d":"2026-02-10","t":7.58,"tmin":2.2,"tmax":17.4,"h":80.18,"n":961.08,"nmin":949.51,"nmax":969.26,"r":0.6,"v":13.436,"vmin":12.692},{"d":"2026-02-11","t":8.78,"tmin":3.0,"tmax":18.0,"h":79.95,"n":960.72,"nmin":944.93,"nmax":971.47,"r":4.5,"v":13.38,"vmin":12.67},{"d":"2026-02-12","t":8.08,"tmin":3.5,"tmax":15.6,"h":85.44,"n":971.22,"nmin":957.44,"nmax":989.76,"r":4.6,"v":13.456,"vmin":12.671},{"d":"2026-02-13","t":7.58,"tmin":6.3,"tmax":10.7,"h":89.71,"n":1040.75,"nmin":989.41,"nmax":1076.08,"r":18.9,"v":13.454,"vmin":12.679},{"d":"2026-02-14","t":7.37,"tmin":5.2,"tmax":10.9,"h":89.29,"n":1067.95,"nmin":1039.73,"nmax":1107.81,"r":14.0,"v":13.448,"vmin":12.648},{"d":"2026-02-15","t":7.31,"tmin":4.7,"tmax":12.3,"h":87.95,"n":1097.33,"nmin":1077.78,"nmax":1116.7,"r":2.0,"v":13.449,"vmin":12.641},{"d":"2026-02-16","t":7.01,"tmin":4.6,"tmax":10.8,"h":87.13,"n":1113.77,"nmin":1070.82,"nmax":1199.25,"r":18.0,"v":13.419,"vmin":12.661},{"d":"2026-02-17","t":7.29,"tmin":3.6,"tmax":12.8,"h":82.74,"n":1146.59,"nmin":1097.94,"nmax":1196.5,"r":2.2,"v":13.439,"vmin":12.63},{"d":"2026-02-18","t":7.78,"tmin":4.6,"tmax":14.2,"h":81.21,"n":1079.15,"nmin":1062.94,"nmax":1103.6,"r":4.5,"v":13.453,"vmin":12.728},{"d":"2026-02-19","t":7.56,"tmin":2.4,"tmax":12.9,"h":81.47,"n":1049.84,"nmin":1036.24,"nmax":1068.6,"r":4.2,"v":13.455,"vmin":12.684},{"d":"2026-02-20","t":7.56,"tmin":3.7,"tmax":15.4,"h":78.99,"n":1019.84,"nmin":1000.76,"nmax":1040.46,"r":0.0,"v":13.461,"vmin":12.693},{"d":"2026-02-21","t":7.85,"tmin":4.1,"tmax":14.3,"h":77.87,"n":984.35,"nmin":968.07,"nmax":1002.36,"r":0.0,"v":13.457,"vmin":12.707},{"d":"2026-02-22","t":7.41,"tmin":1.9,"tmax":13.5,"h":81.53,"n":959.58,"nmin":949.12,"nmax":969.86,"r":0.5,"v":13.438,"vmin":12.654},{"d":"2026-02-23","t":7.7,"tmin":5.3,"tmax":12.4,"h":84.31,"n":959.13,"nmin":939.75,"nmax":980.25,"r":4.6,"v":13.445,"vmin":12.68},{"d":"2026-02-24","t":7.48,"tmin":5.3,"tmax":12.0,"h":82.62,"n":988.89,"nmin":975.25,"nmax":1003.62,"r":7.8,"v":13.433,"vmin":12.667},{"d":"2026-02-25","t":7.78,"tmin":4.7,"tmax":12.0,"h":81.42,"n":1011.22,"nmin":1001.67,"nmax":1018.3,"r":5.7,"v":13.463,"vmin":12.682},{"d":"2026-02-26","t":8.42,"tmin":4.1,"tmax":13.6,"h":77.51,"n":990.6,"nmin":968.78,"nmax":1011.97,"r":0.0,"v":13.464,"vmin":12.673},{"d":"2026-02-27","t":8.41,"tmin":1.8,"tmax":16.7,"h":79.19,"n":956.08,"nmin":944.1,"nmax":971.85,"r":0.0,"v":13.414,"vmin":12.652},{"d":"2026-02-28","t":9.67,"tmin":3.8,"tmax":18.9,"h":77.35,"n":937.65,"nmin":928.22,"nmax":959.3,"r":0.2,"v":13.377,"vmin":12.683},{"d":"2026-03-01","t":9.32,"tmin":4.5,"tmax":19.5,"h":78.96,"n":922.97,"nmin":915.7,"nmax":932.63,"r":0.0,"v":13.372,"vmin":12.685},{"d":"2026-03-02","t":9.19,"tmin":3.5,"tmax":15.9,"h":78.5,"n":912.17,"nmin":900.62,"nmax":924.6,"r":0.0,"v":13.428,"vmin":12.69},{"d":"2026-03-03","t":8.75,"tmin":3.1,"tmax":18.5,"h":78.21,"n":903.39,"nmin":895.81,"nmax":908.26,"r":0.0,"v":13.426,"vmin":12.666},{"d":"2026-03-04","t":7.13,"tmin":2.0,"tmax":13.1,"h":86.32,"n":899.25,"nmin":890.05,"nmax":907.56,"r":7.6,"v":13.446,"vmin":12.649},{"d":"2026-03-05","t":8.68,"tmin":6.3,"tmax":13.9,"h":83.93,"n":911.73,"nmin":906.88,"nmax":916.72,"r":4.6,"v":13.456,"vmin":12.663},{"d":"2026-03-06","t":8.46,"tmin":5.0,"tmax":13.1,"h":84.83,"n":923.68,"nmin":902.77,"nmax":962.3,"r":9.2,"v":13.471,"vmin":12.683},{"d":"2026-03-07","t":8.47,"tmin":4.8,"tmax":12.9,"h":84.91,"n":969.07,"nmin":954.52,"nmax":991.16,"r":7.1,"v":13.456,"vmin":12.662},{"d":"2026-03-08","t":7.85,"tmin":3.6,"tmax":14.2,"h":85.86,"n":972.07,"nmin":959.71,"nmax":984.59,"r":7.9,"v":13.466,"vmin":12.631},{"d":"2026-03-09","t":8.49,"tmin":6.0,"tmax":14.7,"h":88.04,"n":1018.25,"nmin":980.2,"nmax":1063.39,"r":20.9,"v":13.451,"vmin":12.664},{"d":"2026-03-10","t":8.5,"tmin":5.7,"tmax":12.5,"h":87.92,"n":1068.19,"nmin":1031.12,"nmax":1170.69,"r":20.9,"v":13.444,"vmin":12.65},{"d":"2026-03-11","t":8.78,"tmin":6.1,"tmax":14.4,"h":84.34,"n":1144.6,"nmin":1103.55,"nmax":1167.77,"r":4.7,"v":13.411,"vmin":12.628},{"d":"2026-03-12","t":8.29,"tmin":6.7,"tmax":14.3,"h":84.69,"n":1114.94,"nmin":1086.89,"nmax":1147.08,"r":10.1,"v":13.419,"vmin":12.665},{"d":"2026-03-13","t":8.0,"tmin":3.1,"tmax":15.8,"h":75.28,"n":1100.05,"nmin":1062.47,"nmax":1130.13,"r":2.4,"v":13.406,"vmin":12.637},{"d":"2026-03-14","t":8.7,"tmin":3.4,"tmax":16.2,"h":65.5,"n":1041.86,"nmin":1014.89,"nmax":1067.06,"r":0.0,"v":13.417,"vmin":12.721},{"d":"2026-03-15","t":8.79,"tmin":2.7,"tmax":16.7,"h":63.19,"n":1000.4,"nmin":979.86,"nmax":1019.7,"r":0.0,"v":13.399,"vmin":12.7},{"d":"2026-03-16","t":7.84,"tmin":2.1,"tmax":16.6,"h":57.88,"n":968.72,"nmin":954.89,"nmax":981.63,"r":0.0,"v":13.389,"vmin":12.675},{"d":"2026-03-17","t":7.24,"tmin":1.4,"tmax":16.2,"h":64.36,"n":946.13,"nmin":935.76,"nmax":956.2,"r":0.5,"v":13.428,"vmin":12.659},{"d":"2026-03-18","t":7.82,"tmin":2.8,"tmax":13.2,"h":67.65,"n":928.81,"nmin":920.56,"nmax":936.36,"r":0.0,"v":13.458,"vmin":12.671},{"d":"2026-03-19","t":7.88,"tmin":0.9,"tmax":15.8,"h":59.16,"n":914.42,"nmin":905.15,"nmax":922.91,"r":0.0,"v":13.403,"vmin":12.629},{"d":"2026-03-20","t":7.95,"tmin":3.0,"tmax":14.1,"h":53.29,"n":900.19,"nmin":892.41,"nmax":907.39,"r":0.0,"v":13.414,"vmin":12.667},{"d":"2026-03-21","t":7.09,"tmin":1.0,"tmax":12.9,"h":71.42,"n":892.82,"nmin":889.67,"nmax":898.71,"r":0.7,"v":13.424,"vmin":12.673},{"d":"2026-03-22","t":6.44,"tmin":-0.6,"tmax":12.5,"h":63.5,"n":887.92,"nmin":882.44,"nmax":895.96,"r":0.0,"v":13.439,"vmin":12.616},{"d":"2026-03-23","t":6.27,"tmin":0.8,"tmax":13.6,"h":75.9,"n":883.78,"nmin":880.6,"nmax":886.83,"r":0.0,"v":13.432,"vmin":12.628},{"d":"2026-03-24","t":7.53,"tmin":2.5,"tmax":12.7,"h":73.4,"n":881.12,"nmin":875.77,"nmax":888.93,"r":0.2,"v":13.397,"vmin":12.641},{"d":"2026-03-25","t":7.98,"tmin":2.9,"tmax":12.6,"h":84.62,"n":878.96,"nmin":874.71,"nmax":885.96,"r":0.2,"v":13.45,"vmin":12.669},{"d":"2026-03-26","t":8.26,"tmin":3.0,"tmax":13.5,"h":84.32,"n":883.51,"nmin":876.25,"nmax":891.86,"r":2.9,"v":13.43,"vmin":12.692},{"d":"2026-03-27","t":8.19,"tmin":3.8,"tmax":13.3,"h":86.62,"n":895.09,"nmin":889.05,"nmax":901.25,"r":3.3,"v":13.461,"vmin":12.679},{"d":"2026-03-28","t":9.08,"tmin":2.9,"tmax":16.6,"h":82.35,"n":891.25,"nmin":881.66,"nmax":911.02,"r":0.0,"v":13.45,"vmin":12.692},{"d":"2026-03-29","t":7.91,"tmin":1.6,"tmax":17.7,"h":76.59,"n":879.9,"nmin":871.04,"nmax":895.84,"r":0.0,"v":13.382,"vmin":12.654},{"d":"2026-03-30","t":7.98,"tmin":2.2,"tmax":17.6,"h":78.84,"n":872.17,"nmin":867.84,"nmax":876.04,"r":0.0,"v":13.413,"vmin":12.657},{"d":"2026-03-31","t":7.11,"tmin":2.5,"tmax":15.9,"h":76.96,"n":873.4,"nmin":862.43,"nmax":884.94,"r":1.5,"v":13.434,"vmin":12.637},{"d":"2026-04-01","t":7.01,"tmin":0.4,"tmax":15.7,"h":63.47,"n":875.52,"nmin":869.18,"nmax":882.69,"r":0.0,"v":13.395,"vmin":12.619},{"d":"2026-04-02","t":7.1,"tmin":-0.3,"tmax":18.1,"h":58.8,"n":866.53,"nmin":859.37,"nmax":872.81,"r":0.0,"v":13.382,"vmin":12.638},{"d":"2026-04-03","t":7.05,"tmin":1.7,"tmax":14.6,"h":78.36,"n":857.72,"nmin":851.67,"nmax":867.59,"r":0.0,"v":13.431,"vmin":12.653},{"d":"2026-04-04","t":7.95,"tmin":4.3,"tmax":13.3,"h":79.82,"n":852.14,"nmin":844.87,"nmax":856.43,"r":0.0,"v":13.438,"vmin":12.655},{"d":"2026-04-05","t":8.56,"tmin":6.0,"tmax":13.7,"h":82.04,"n":858.26,"nmin":849.82,"nmax":875.24,"r":1.9,"v":13.425,"vmin":12.668},{"d":"2026-04-06","t":8.22,"tmin":5.5,"tmax":13.8,"h":79.48,"n":878.19,"nmin":869.78,"nmax":882.52,"r":0.0,"v":13.418,"vmin":12.644},{"d":"2026-04-07","t":8.99,"tmin":5.3,"tmax":14.2,"h":79.28,"n":880.15,"nmin":875.03,"nmax":886.94,"r":0.3,"v":13.424,"vmin":12.661},{"d":"2026-04-08","t":7.99,"tmin":5.6,"tmax":12.9,"h":79.13,"n":879.99,"nmin":874.28,"nmax":885.05,"r":0.6,"v":13.434,"vmin":12.706},{"d":"2026-04-09","t":7.99,"tmin":4.3,"tmax":12.5,"h":79.19,"n":949.63,"nmin":882.62,"nmax":991.64,"r":10.6,"v":13.444,"vmin":12.65},{"d":"2026-04-10","t":8.23,"tmin":5.3,"tmax":12.0,"h":75.85,"n":951.28,"nmin":925.04,"nmax":978.25,"r":0.0,"v":13.439,"vmin":12.653},{"d":"2026-04-11","t":8.31,"tmin":4.2,"tmax":13.3,"h":78.53,"n":928.14,"nmin":919.14,"nmax":938.98,"r":3.6,"v":13.401,"vmin":12.65},{"d":"2026-04-12","t":8.47,"tmin":3.4,"tmax":14.7,"h":78.89,"n":913.38,"nmin":902.53,"nmax":924.28,"r":0.3,"v":13.437,"vmin":12.659},{"d":"2026-04-13","t":8.02,"tmin":2.5,"tmax":14.1,"h":79.84,"n":893.18,"nmin":883.28,"nmax":902.28,"r":0.0,"v":13.379,"vmin":12.65},{"d":"2026-04-14","t":7.21,"tmin":0.0,"tmax":13.8,"h":83.52,"n":881.76,"nmin":870.24,"nmax":900.22,"r":3.5,"v":13.376,"vmin":12.595},{"d":"2026-04-15","t":8.29,"tmin":5.4,"tmax":15.0,"h":84.96,"n":903.26,"nmin":892.4,"nmax":916.05,"r":6.9,"v":13.416,"vmin":12.622},{"d":"2026-04-16","t":8.38,"tmin":5.8,"tmax":13.1,"h":85.35,"n":944.46,"nmin":914.9,"nmax":1005.99,"r":13.9,"v":13.445,"vmin":12.667},{"d":"2026-04-17","t":7.67,"tmin":4.5,"tmax":12.5,"h":86.12,"n":1078.81,"nmin":1007.45,"nmax":1109.15,"r":9.3,"v":13.413,"vmin":12.646},{"d":"2026-04-18","t":8.6,"tmin":3.3,"tmax":14.8,"h":81.09,"n":1044.26,"nmin":1009.86,"nmax":1084.28,"r":1.0,"v":13.387,"vmin":12.589},{"d":"2026-04-19","t":7.9,"tmin":3.0,"tmax":15.5,"h":79.47,"n":995.61,"nmin":980.23,"nmax":1012.84,"r":1.7,"v":13.399,"vmin":12.654},{"d":"2026-04-20","t":7.6,"tmin":4.6,"tmax":14.1,"h":77.4,"n":973.96,"nmin":956.11,"nmax":985.37,"r":0.0,"v":13.414,"vmin":12.673},{"d":"2026-04-21","t":7.34,"tmin":5.0,"tmax":11.7,"h":80.64,"n":949.8,"nmin":944.32,"nmax":957.76,"r":1.8,"v":13.419,"vmin":12.67},{"d":"2026-04-22","t":8.21,"tmin":4.9,"tmax":13.6,"h":73.96,"n":938.18,"nmin":925.25,"nmax":950.04,"r":0.0,"v":13.413,"vmin":12.648},{"d":"2026-04-23","t":7.44,"tmin":3.2,"tmax":13.4,"h":73.84,"n":917.27,"nmin":908.9,"nmax":926.42,"r":1.3,"v":13.402,"vmin":12.649},{"d":"2026-04-24","t":7.43,"tmin":3.1,"tmax":13.8,"h":73.86,"n":906.42,"nmin":899.74,"nmax":917.66,"r":0.2,"v":13.438,"vmin":12.636},{"d":"2026-04-25","t":6.99,"tmin":1.5,"tmax":13.6,"h":80.72,"n":901.11,"nmin":886.7,"nmax":914.95,"r":11.3,"v":13.371,"vmin":12.628},{"d":"2026-04-26","t":8.08,"tmin":5.0,"tmax":14.3,"h":83.59,"n":903.26,"nmin":897.41,"nmax":911.97,"r":2.1,"v":13.402,"vmin":12.621},{"d":"2026-04-27","t":7.45,"tmin":3.1,"tmax":13.6,"h":82.88,"n":899.82,"nmin":883.07,"nmax":924.86,"r":9.6,"v":13.421,"vmin":12.644},{"d":"2026-04-28","t":7.51,"tmin":2.0,"tmax":14.2,"h":81.5,"n":926.69,"nmin":918.15,"nmax":933.87,"r":0.4,"v":13.443,"vmin":12.614},{"d":"2026-04-29","t":8.49,"tmin":4.4,"tmax":13.7,"h":77.53,"n":908.66,"nmin":895.52,"nmax":919.96,"r":0.0,"v":13.419,"vmin":12.636},{"d":"2026-04-30","t":8.18,"tmin":3.7,"tmax":15.6,"h":77.57,"n":889.71,"nmin":881.18,"nmax":899.18,"r":0.0,"v":13.401,"vmin":12.643},{"d":"2026-05-01","t":7.44,"tmin":4.8,"tmax":10.8,"h":82.23,"n":884.35,"nmin":875.23,"nmax":893.15,"r":2.1,"v":13.429,"vmin":12.639},{"d":"2026-05-02","t":7.19,"tmin":6.0,"tmax":9.5,"h":83.46,"n":964.85,"nmin":892.02,"nmax":1029.63,"r":10.8,"v":13.385,"vmin":12.637},{"d":"2026-05-03","t":7.51,"tmin":6.1,"tmax":9.6,"h":85.72,"n":1031.13,"nmin":1007.95,"nmax":1062.8,"r":4.8,"v":13.401,"vmin":12.626},{"d":"2026-05-04","t":7.61,"tmin":5.8,"tmax":10.1,"h":86.85,"n":1078.41,"nmin":1058.35,"nmax":1106.88,"r":2.4,"v":13.428,"vmin":12.636},{"d":"2026-05-05","t":8.62,"tmin":6.0,"tmax":13.8,"h":81.85,"n":1097.24,"nmin":1064.55,"nmax":1117.96,"r":0.1,"v":13.381,"vmin":12.648},{"d":"2026-05-06","t":8.2,"tmin":6.2,"tmax":12.2,"h":83.01,"n":1046.42,"nmin":1034.72,"nmax":1069.49,"r":1.3,"v":13.404,"vmin":12.653},{"d":"2026-05-07","t":7.75,"tmin":4.1,"tmax":13.5,"h":79.15,"n":1036.22,"nmin":1013.97,"nmax":1051.53,"r":0.0,"v":13.387,"vmin":12.61},{"d":"2026-05-08","t":7.76,"tmin":1.2,"tmax":15.5,"h":80.99,"n":994.01,"nmin":976.83,"nmax":1015.28,"r":1.8,"v":13.431,"vmin":12.602},{"d":"2026-05-09","t":8.26,"tmin":3.1,"tmax":13.5,"h":80.19,"n":966.05,"nmin":953.65,"nmax":978.4,"r":0.1,"v":13.424,"vmin":12.642},{"d":"2026-05-10","t":8.89,"tmin":6.9,"tmax":13.0,"h":79.15,"n":944.83,"nmin":934.28,"nmax":954.64,"r":0.0,"v":13.432,"vmin":12.652},{"d":"2026-05-11","t":8.18,"tmin":6.2,"tmax":12.4,"h":83.21,"n":942.38,"nmin":932.11,"nmax":981.37,"r":1.2,"v":13.423,"vmin":12.649},{"d":"2026-05-12","t":7.75,"tmin":5.4,"tmax":10.7,"h":83.22,"n":1002.55,"nmin":980.11,"nmax":1025.49,"r":0.1,"v":13.421,"vmin":12.621},{"d":"2026-05-13","t":8.69,"tmin":4.7,"tmax":14.8,"h":78.84,"n":1000.69,"nmin":970.33,"nmax":1025.78,"r":0.0,"v":13.43,"vmin":12.61},{"d":"2026-05-14","t":8.59,"tmin":3.2,"tmax":14.9,"h":74.86,"n":955.01,"nmin":941.21,"nmax":971.38,"r":0.0,"v":13.415,"vmin":12.628},{"d":"2026-05-15","t":8.49,"tmin":5.4,"tmax":13.0,"h":76.81,"n":933.32,"nmin":923.23,"nmax":943.09,"r":0.0,"v":13.428,"vmin":12.672},{"d":"2026-05-16","t":8.59,"tmin":5.0,"tmax":14.7,"h":79.6,"n":915.89,"nmin":908.05,"nmax":924.89,"r":0.0,"v":13.427,"vmin":12.66},{"d":"2026-05-17","t":8.6,"tmin":5.4,"tmax":14.1,"h":78.58,"n":904.7,"nmin":898.23,"nmax":912.36,"r":0.0,"v":13.397,"vmin":12.66},{"d":"2026-05-18","t":8.65,"tmin":5.7,"tmax":13.4,"h":78.74,"n":895.1,"nmin":889.06,"nmax":901.28,"r":1.4,"v":13.398,"vmin":12.637},{"d":"2026-05-19","t":8.53,"tmin":6.2,"tmax":12.0,"h":78.01,"n":902.69,"nmin":894.95,"nmax":910.38,"r":0.0,"v":13.409,"vmin":12.633},{"d":"2026-05-20","t":9.2,"tmin":5.5,"tmax":14.0,"h":74.85,"n":895.66,"nmin":886.21,"nmax":905.1,"r":0.0,"v":13.428,"vmin":12.627},{"d":"2026-05-21","t":8.66,"tmin":5.7,"tmax":12.7,"h":82.56,"n":891.57,"nmin":878.37,"nmax":918.56,"r":0.1,"v":13.438,"vmin":12.653},{"d":"2026-05-22","t":7.93,"tmin":5.5,"tmax":11.7,"h":79.11,"n":920.29,"nmin":909.93,"nmax":937.33,"r":0.1,"v":13.416,"vmin":12.629},{"d":"2026-05-23","t":8.42,"tmin":6.1,"tmax":12.6,"h":77.78,"n":905.59,"nmin":897.45,"nmax":914.45,"r":0.0,"v":13.421,"vmin":12.641},{"d":"2026-05-24","t":8.58,"tmin":5.2,"tmax":14.8,"h":77.82,"n":892.3,"nmin":884.0,"nmax":900.25,"r":0.0,"v":13.398,"vmin":12.623},{"d":"2026-05-25","t":8.32,"tmin":4.9,"tmax":13.6,"h":75.96,"n":878.67,"nmin":868.2,"nmax":884.65,"r":0.0,"v":13.406,"vmin":12.618},{"d":"2026-05-26","t":6.56,"tmin":5.6,"tmax":10.2,"h":81.19,"n":871.06,"nmin":867.33,"nmax":873.38,"r":0.0,"v":13.218,"vmin":12.626}],"anomalias":{"nivel":[[  "2026-02-02 04:35",1101.0],["2026-02-02 04:40",1101.4],["2026-02-02 04:45",1103.5],["2026-02-02 04:50",1105.8],["2026-02-02 04:55",1108.9],["2026-02-02 05:00",1109.6],["2026-02-02 05:05",1111.5],["2026-02-02 05:10",1116.4],["2026-02-02 05:15",1119.1],["2026-02-02 05:20",1115.7],["2026-02-02 05:25",1117.1],["2026-02-02 05:30",1120.3],["2026-02-02 05:35",1120.7],["2026-02-02 05:40",1123.2],["2026-02-02 05:45",1125.1],["2026-02-02 05:50",1129.6],["2026-02-02 05:55",1126.7],["2026-02-02 06:00",1133.6],["2026-02-02 06:05",1137.3],["2026-02-02 06:10",1133.8]],"voltaje":[["2025-12-17 18:50",12.997],["2025-12-17 18:55",12.993],["2025-12-17 18:50",12.987],["2025-12-17 19:05",12.984],["2025-12-17 19:10",12.978],["2025-12-17 19:15",12.974],["2025-12-17 19:20",12.97],["2025-12-17 19:25",12.967],["2025-12-17 19:30",12.961],["2025-12-17 19:35",12.959],["2025-12-17 19:40",12.954],["2025-12-17 19:45",12.952],["2025-12-17 19:50",12.948],["2025-12-17 19:55",12.946],["2025-12-17 20:00",12.941],["2025-12-17 20:05",12.94],["2025-12-17 20:10",12.935],["2025-12-17 20:15",12.934],["2025-12-17 20:20",12.929],["2025-12-17 20:25",12.928]],"lluvia":[["2026-01-02 17:50",25.2],["2026-01-02 20:35",8.4],["2026-01-02 20:40",7.2],["2026-01-04 14:40",14.4],["2026-01-04 14:45",15.6],["2026-01-04 14:50",7.2],["2026-01-10 18:05",7.2],["2026-01-10 18:10",10.8],["2026-01-10 18:15",13.2],["2026-01-12 15:50",15.6],["2026-01-12 15:55",13.2],["2026-01-12 16:00",13.2],["2026-01-12 16:05",12.0],["2026-01-12 16:10",6.0],["2026-01-12 19:30",6.0],["2026-01-12 19:40",6.0],["2026-01-13 13:55",9.6],["2026-01-13 14:10",6.0],["2026-01-13 14:20",8.4],["2026-01-13 14:25",8.4]],"nivel_mean":936.9,"nivel_2std":1100.0},"scatter":[{"x":10.2,"y":83.0,"n":916.0},{"x":9.6,"y":84.6,"n":915.0},{"x":8.8,"y":88.2,"n":915.0},{"x":8.4,"y":90.9,"n":912.0},{"x":7.3,"y":92.6,"n":912.0},{"x":6.7,"y":93.4,"n":908.0},{"x":6.3,"y":92.3,"n":907.0},{"x":5.8,"y":93.5,"n":903.0},{"x":6.2,"y":91.1,"n":903.0},{"x":5.9,"y":91.0,"n":902.0},{"x":5.6,"y":89.7,"n":902.0},{"x":5.8,"y":93.8,"n":902.0},{"x":6.1,"y":92.7,"n":904.0},{"x":6.4,"y":91.3,"n":904.0},{"x":6.2,"y":90.6,"n":903.0},{"x":5.7,"y":93.0,"n":902.0},{"x":6.2,"y":91.8,"n":903.0},{"x":5.3,"y":94.7,"n":902.0},{"x":5.4,"y":94.7,"n":900.0},{"x":5.8,"y":93.3,"n":900.0},{"x":5.8,"y":94.0,"n":898.0},{"x":7.2,"y":92.4,"n":898.0},{"x":9.3,"y":87.2,"n":900.0},{"x":10.1,"y":81.2,"n":898.0},{"x":11.0,"y":69.8,"n":900.0},{"x":11.7,"y":73.2,"n":899.0},{"x":10.8,"y":78.9,"n":897.0},{"x":8.9,"y":86.0,"n":898.0},{"x":9.4,"y":85.6,"n":898.0},{"x":8.1,"y":86.5,"n":900.0},{"x":9.1,"y":83.8,"n":901.0},{"x":9.8,"y":86.7,"n":900.0},{"x":8.8,"y":91.7,"n":899.0},{"x":7.7,"y":92.8,"n":899.0},{"x":7.4,"y":95.4,"n":898.0},{"x":7.1,"y":91.3,"n":898.0},{"x":5.6,"y":89.7,"n":897.0},{"x":4.2,"y":90.7,"n":897.0},{"x":4.8,"y":93.2,"n":896.0},{"x":4.8,"y":94.6,"n":896.0},{"x":5.2,"y":95.2,"n":897.0},{"x":6.1,"y":88.6,"n":896.0},{"x":5.6,"y":87.6,"n":896.0},{"x":4.0,"y":87.6,"n":895.0},{"x":3.5,"y":90.7,"n":895.0},{"x":3.1,"y":89.5,"n":894.0},{"x":3.6,"y":90.6,"n":894.0},{"x":2.2,"y":88.9,"n":894.0},{"x":1.7,"y":89.6,"n":893.0},{"x":2.7,"y":92.2,"n":898.0},{"x":6.0,"y":82.2,"n":892.0},{"x":10.7,"y":70.0,"n":894.0},{"x":14.6,"y":61.2,"n":896.0},{"x":12.1,"y":71.9,"n":893.0},{"x":10.2,"y":76.9,"n":892.0},{"x":11.1,"y":74.5,"n":892.0},{"x":10.8,"y":76.3,"n":893.0},{"x":11.5,"y":77.7,"n":893.0},{"x":11.0,"y":77.7,"n":892.0},{"x":12.4,"y":76.3,"n":892.0},{"x":12.3,"y":73.0,"n":891.0},{"x":7.2,"y":91.9,"n":891.0},{"x":8.8,"y":80.0,"n":889.0},{"x":6.4,"y":89.6,"n":888.0},{"x":6.7,"y":87.9,"n":887.0},{"x":6.5,"y":87.2,"n":887.0},{"x":6.5,"y":88.8,"n":887.0},{"x":6.2,"y":89.0,"n":886.0},{"x":5.8,"y":87.2,"n":885.0},{"x":6.2,"y":92.0,"n":885.0},{"x":5.9,"y":94.0,"n":886.0},{"x":6.2,"y":91.8,"n":885.0},{"x":5.3,"y":89.1,"n":885.0},{"x":5.6,"y":90.9,"n":885.0},{"x":5.7,"y":91.8,"n":884.0},{"x":5.0,"y":88.8,"n":884.0},{"x":4.8,"y":89.3,"n":884.0},{"x":4.5,"y":88.0,"n":884.0},{"x":6.1,"y":84.9,"n":882.0},{"x":11.1,"y":69.5,"n":884.0},{"x":10.8,"y":75.4,"n":883.0},{"x":13.3,"y":67.0,"n":882.0},{"x":10.3,"y":75.3,"n":883.0},{"x":13.7,"y":69.2,"n":887.0},{"x":15.3,"y":63.6,"n":883.0},{"x":13.0,"y":71.3,"n":884.0},{"x":13.5,"y":65.2,"n":883.0},{"x":11.9,"y":74.7,"n":880.0},{"x":15.4,"y":64.7,"n":888.0},{"x":10.7,"y":76.1,"n":882.0},{"x":7.8,"y":85.1,"n":880.0},{"x":8.2,"y":81.5,"n":881.0},{"x":7.4,"y":85.3,"n":880.0},{"x":7.2,"y":87.1,"n":879.0},{"x":6.3,"y":82.5,"n":879.0},{"x":4.8,"y":84.0,"n":878.0},{"x":4.8,"y":86.4,"n":878.0},{"x":5.7,"y":88.8,"n":879.0},{"x":3.4,"y":87.2,"n":878.0},{"x":2.9,"y":92.3,"n":877.0},{"x":1.9,"y":89.1,"n":877.0},{"x":1.5,"y":89.5,"n":877.0},{"x":1.0,"y":88.4,"n":875.0},{"x":1.0,"y":90.3,"n":876.0},{"x":1.3,"y":89.6,"n":876.0},{"x":1.0,"y":88.8,"n":875.0},{"x":1.5,"y":89.3,"n":872.0},{"x":6.0,"y":78.6,"n":873.0},{"x":11.4,"y":67.2,"n":878.0},{"x":11.0,"y":73.8,"n":875.0},{"x":11.0,"y":74.5,"n":877.0},{"x":14.5,"y":66.0,"n":871.0},{"x":16.2,"y":60.9,"n":876.0},{"x":14.4,"y":61.6,"n":873.0},{"x":14.8,"y":63.1,"n":876.0},{"x":12.8,"y":69.1,"n":868.0},{"x":12.6,"y":74.1,"n":874.0},{"x":12.7,"y":68.1,"n":870.0},{"x":10.0,"y":83.9,"n":873.0},{"x":8.7,"y":86.6,"n":872.0},{"x":8.3,"y":87.8,"n":872.0},{"x":7.9,"y":88.9,"n":872.0},{"x":6.5,"y":84.9,"n":872.0},{"x":5.2,"y":86.1,"n":872.0},{"x":3.6,"y":86.4,"n":871.0},{"x":3.5,"y":91.2,"n":871.0},{"x":3.7,"y":90.2,"n":871.0},{"x":3.7,"y":89.5,"n":870.0},{"x":4.5,"y":88.6,"n":871.0},{"x":3.7,"y":88.7,"n":871.0},{"x":3.3,"y":87.3,"n":871.0},{"x":3.3,"y":89.3,"n":870.0},{"x":3.6,"y":88.3,"n":870.0},{"x":3.4,"y":87.3,"n":870.0},{"x":6.0,"y":84.1,"n":870.0},{"x":8.6,"y":73.9,"n":866.0},{"x":11.0,"y":60.2,"n":865.0},{"x":14.0,"y":51.0,"n":865.0},{"x":15.6,"y":57.3,"n":875.0},{"x":14.1,"y":63.4,"n":859.0},{"x":12.9,"y":67.4,"n":869.0},{"x":13.3,"y":65.8,"n":869.0},{"x":13.9,"y":69.2,"n":865.0},{"x":12.9,"y":73.6,"n":868.0},{"x":12.1,"y":78.1,"n":864.0},{"x":10.5,"y":81.4,"n":867.0},{"x":12.1,"y":71.3,"n":867.0},{"x":9.0,"y":78.6,"n":868.0},{"x":8.2,"y":84.8,"n":867.0},{"x":7.4,"y":82.1,"n":867.0},{"x":7.6,"y":83.7,"n":868.0},{"x":5.4,"y":84.5,"n":866.0},{"x":5.9,"y":89.3,"n":867.0},{"x":4.4,"y":84.3,"n":867.0},{"x":3.1,"y":87.4,"n":866.0},{"x":2.4,"y":88.0,"n":866.0},{"x":2.2,"y":88.5,"n":866.0},{"x":2.4,"y":89.4,"n":866.0},{"x":2.7,"y":89.1,"n":866.0},{"x":2.3,"y":85.6,"n":865.0},{"x":1.4,"y":85.8,"n":865.0},{"x":1.1,"y":86.9,"n":865.0},{"x":1.2,"y":86.4,"n":865.0},{"x":5.5,"y":77.5,"n":862.0},{"x":9.9,"y":66.6,"n":865.0},{"x":13.4,"y":53.9,"n":871.0},{"x":15.4,"y":52.0,"n":873.0},{"x":16.6,"y":51.5,"n":865.0},{"x":17.6,"y":47.8,"n":862.0},{"x":18.1,"y":47.0,"n":869.0},{"x":15.8,"y":57.3,"n":862.0},{"x":16.7,"y":53.2,"n":863.0},{"x":17.9,"y":48.2,"n":863.0},{"x":8.4,"y":65.6,"n":861.0},{"x":7.5,"y":70.4,"n":862.0},{"x":6.1,"y":79.1,"n":863.0},{"x":6.4,"y":80.7,"n":862.0},{"x":5.1,"y":79.7,"n":862.0},{"x":3.9,"y":81.9,"n":862.0},{"x":2.8,"y":77.9,"n":862.0},{"x":2.1,"y":70.1,"n":861.0},{"x":1.3,"y":68.1,"n":861.0},{"x":1.1,"y":67.4,"n":861.0},{"x":0.6,"y":65.3,"n":861.0},{"x":-0.5,"y":66.5,"n":861.0},{"x":-0.8,"y":65.6,"n":860.0},{"x":-1.0,"y":66.2,"n":859.0},{"x":-1.4,"y":66.2,"n":859.0},{"x":2.5,"y":59.7,"n":859.0},{"x":8.2,"y":42.5,"n":861.0},{"x":13.0,"y":35.4,"n":859.0},{"x":13.6,"y":42.6,"n":861.0},{"x":14.9,"y":43.6,"n":855.0},{"x":16.5,"y":47.3,"n":861.0},{"x":16.6,"y":53.9,"n":861.0},{"x":16.6,"y":50.5,"n":858.0},{"x":16.2,"y":48.2,"n":857.0},{"x":16.6,"y":49.8,"n":852.0},{"x":14.2,"y":62.1,"n":856.0},{"x":7.9,"y":79.4,"n":856.0},{"x":4.9,"y":75.7,"n":857.0},{"x":4.2,"y":78.5,"n":857.0},{"x":2.7,"y":75.9,"n":857.0},{"x":1.1,"y":79.8,"n":857.0},{"x":0.7,"y":81.6,"n":856.0},{"x":0.9,"y":80.9,"n":856.0},{"x":1.0,"y":83.2,"n":855.0},{"x":1.6,"y":89.3,"n":855.0},{"x":3.4,"y":81.8,"n":856.0},{"x":2.6,"y":85.5,"n":855.0},{"x":4.2,"y":83.7,"n":856.0},{"x":3.6,"y":81.1,"n":855.0},{"x":3.1,"y":81.8,"n":856.0},{"x":4.6,"y":74.3,"n":855.0},{"x":3.9,"y":76.6,"n":854.0},{"x":7.3,"y":71.4,"n":857.0},{"x":10.9,"y":55.3,"n":858.0},{"x":12.3,"y":51.3,"n":854.0},{"x":14.0,"y":50.4,"n":855.0},{"x":15.4,"y":47.3,"n":863.0},{"x":15.9,"y":46.7,"n":854.0},{"x":16.0,"y":56.2,"n":851.0},{"x":14.6,"y":59.1,"n":856.0},{"x":15.0,"y":52.1,"n":847.0},{"x":14.1,"y":54.1,"n":855.0},{"x":11.8,"y":61.3,"n":852.0},{"x":6.8,"y":75.8,"n":852.0},{"x":6.8,"y":78.2,"n":852.0},{"x":7.0,"y":81.4,"n":851.0},{"x":6.8,"y":81.7,"n":851.0},{"x":6.6,"y":82.9,"n":850.0},{"x":6.6,"y":81.7,"n":850.0},{"x":6.3,"y":82.0,"n":850.0},{"x":6.4,"y":79.8,"n":850.0},{"x":6.2,"y":77.5,"n":850.0},{"x":5.3,"y":78.9,"n":850.0},{"x":1.5,"y":77.6,"n":849.0},{"x":0.8,"y":82.1,"n":849.0},{"x":1.1,"y":86.8,"n":850.0},{"x":3.3,"y":85.9,"n":850.0},{"x":3.9,"y":82.6,"n":849.0},{"x":7.1,"y":74.5,"n":855.0},{"x":10.0,"y":63.3,"n":851.0},{"x":12.1,"y":55.7,"n":852.0},{"x":13.3,"y":62.5,"n":852.0},{"x":13.3,"y":65.2,"n":852.0},{"x":13.7,"y":63.7,"n":849.0},{"x":14.4,"y":62.5,"n":853.0},{"x":15.2,"y":61.9,"n":850.0},{"x":17.0,"y":52.5,"n":849.0},{"x":14.9,"y":49.0,"n":847.0},{"x":14.4,"y":50.5,"n":848.0},{"x":7.7,"y":61.1,"n":848.0},{"x":5.2,"y":70.7,"n":847.0},{"x":3.3,"y":74.7,"n":849.0},{"x":0.9,"y":75.1,"n":846.0},{"x":0.0,"y":75.0,"n":846.0},{"x":-0.4,"y":75.0,"n":847.0},{"x":-0.7,"y":80.1,"n":846.0},{"x":-0.1,"y":87.1,"n":846.0},{"x":2.0,"y":83.5,"n":846.0},{"x":2.8,"y":82.1,"n":846.0},{"x":1.2,"y":82.5,"n":847.0},{"x":0.7,"y":80.0,"n":847.0},{"x":-0.4,"y":83.1,"n":848.0},{"x":-1.1,"y":79.1,"n":846.0},{"x":0.2,"y":84.0,"n":846.0},{"x":1.9,"y":79.2,"n":846.0},{"x":6.1,"y":65.2,"n":848.0},{"x":10.4,"y":53.7,"n":846.0},{"x":11.2,"y":68.4,"n":848.0},{"x":14.7,"y":54.6,"n":843.0},{"x":16.4,"y":54.7,"n":852.0},{"x":15.3,"y":56.5,"n":845.0},{"x":13.6,"y":54.1,"n":845.0},{"x":13.5,"y":60.7,"n":843.0},{"x":15.4,"y":52.2,"n":845.0},{"x":17.5,"y":41.8,"n":845.0},{"x":10.7,"y":72.2,"n":845.0},{"x":6.1,"y":73.6,"n":844.0},{"x":4.6,"y":77.7,"n":844.0},{"x":3.3,"y":83.4,"n":844.0},{"x":2.6,"y":81.7,"n":844.0},{"x":4.0,"y":88.6,"n":844.0},{"x":3.7,"y":87.5,"n":845.0},{"x":3.7,"y":82.8,"n":845.0},{"x":2.1,"y":85.0,"n":844.0},{"x":2.5,"y":85.5,"n":844.0},{"x":2.8,"y":86.3,"n":844.0},{"x":2.7,"y":88.1,"n":844.0},{"x":2.6,"y":87.1,"n":844.0},{"x":3.0,"y":85.6,"n":844.0},{"x":3.3,"y":80.4,"n":843.0},{"x":4.5,"y":80.4,"n":844.0},{"x":6.2,"y":81.1,"n":844.0},{"x":8.7,"y":74.9,"n":845.0},{"x":9.7,"y":63.0,"n":839.0},{"x":12.0,"y":55.3,"n":845.0},{"x":11.6,"y":60.1,"n":846.0},{"x":11.7,"y":57.4,"n":844.0},{"x":11.7,"y":64.0,"n":849.0},{"x":12.6,"y":61.7,"n":843.0},{"x":12.8,"y":60.3,"n":843.0},{"x":12.1,"y":56.6,"n":835.0},{"x":11.8,"y":62.3,"n":841.0},{"x":11.0,"y":67.0,"n":840.0},{"x":11.0,"y":67.5,"n":841.0},{"x":6.8,"y":73.2,"n":840.0},{"x":4.6,"y":81.1,"n":840.0},{"x":5.0,"y":82.3,"n":840.0},{"x":4.4,"y":83.9,"n":840.0},{"x":3.5,"y":83.7,"n":840.0},{"x":1.6,"y":84.0,"n":840.0},{"x":1.5,"y":81.5,"n":839.0},{"x":1.5,"y":84.8,"n":840.0},{"x":1.6,"y":84.3,"n":839.0},{"x":1.1,"y":83.8,"n":839.0},{"x":1.2,"y":87.3,"n":838.0},{"x":2.5,"y":80.2,"n":840.0},{"x":3.5,"y":75.7,"n":841.0},{"x":3.2,"y":76.4,"n":840.0},{"x":4.0,"y":70.7,"n":841.0},{"x":6.3,"y":65.7,"n":840.0},{"x":8.8,"y":60.5,"n":843.0},{"x":9.7,"y":60.8,"n":840.0},{"x":11.0,"y":59.0,"n":842.0},{"x":12.1,"y":57.6,"n":842.0},{"x":12.6,"y":59.5,"n":843.0},{"x":13.2,"y":57.5,"n":841.0},{"x":13.7,"y":57.4,"n":839.0},{"x":13.9,"y":62.4,"n":835.0},{"x":12.2,"y":60.7,"n":838.0},{"x":10.9,"y":66.0,"n":837.0},{"x":9.1,"y":75.7,"n":836.0},{"x":8.5,"y":76.5,"n":837.0},{"x":7.6,"y":78.5,"n":836.0},{"x":7.6,"y":82.5,"n":836.0},{"x":7.7,"y":82.8,"n":835.0},{"x":7.2,"y":80.5,"n":835.0},{"x":6.6,"y":80.0,"n":835.0},{"x":6.3,"y":82.4,"n":835.0},{"x":6.4,"y":82.7,"n":835.0},{"x":6.3,"y":81.2,"n":835.0},{"x":6.1,"y":83.1,"n":835.0},{"x":5.9,"y":83.5,"n":835.0},{"x":5.8,"y":82.6,"n":835.0},{"x":5.9,"y":85.5,"n":835.0},{"x":5.8,"y":84.6,"n":835.0},{"x":5.8,"y":83.5,"n":835.0},{"x":5.7,"y":82.9,"n":835.0},{"x":6.2,"y":82.1,"n":835.0},{"x":7.2,"y":79.2,"n":832.0},{"x":8.6,"y":72.5,"n":836.0},{"x":9.3,"y":72.8,"n":836.0},{"x":9.2,"y":74.4,"n":836.0},{"x":9.7,"y":73.2,"n":834.0},{"x":11.3,"y":67.4,"n":839.0},{"x":11.3,"y":65.1,"n":836.0},{"x":10.7,"y":69.1,"n":839.0},{"x":10.3,"y":72.6,"n":836.0},{"x":9.6,"y":76.5,"n":836.0},{"x":11.2,"y":66.8,"n":834.0},{"x":11.9,"y":61.8,"n":836.0},{"x":8.4,"y":71.4,"n":834.0},{"x":6.2,"y":78.8,"n":834.0},{"x":5.1,"y":82.3,"n":833.0},{"x":6.3,"y":82.1,"n":833.0},{"x":6.3,"y":80.8,"n":834.0},{"x":6.5,"y":82.3,"n":834.0},{"x":6.5,"y":84.8,"n":835.0},{"x":6.6,"y":83.5,"n":835.0},{"x":6.2,"y":83.7,"n":834.0},{"x":6.0,"y":82.4,"n":835.0},{"x":5.8,"y":86.8,"n":835.0},{"x":6.1,"y":86.5,"n":834.0},{"x":5.9,"y":87.8,"n":834.0},{"x":5.9,"y":88.8,"n":835.0},{"x":6.1,"y":86.2,"n":835.0},{"x":6.2,"y":85.0,"n":834.0},{"x":7.0,"y":82.8,"n":835.0},{"x":8.5,"y":78.2,"n":836.0},{"x":9.2,"y":75.7,"n":833.0},{"x":11.2,"y":70.9,"n":831.0},{"x":10.9,"y":71.3,"n":836.0},{"x":10.6,"y":71.4,"n":837.0},{"x":10.8,"y":67.4,"n":836.0},{"x":10.5,"y":69.8,"n":836.0},{"x":11.0,"y":69.4,"n":838.0},{"x":10.0,"y":74.9,"n":834.0},{"x":10.4,"y":72.4,"n":835.0},{"x":9.7,"y":75.1,"n":836.0},{"x":8.6,"y":78.3,"n":835.0},{"x":7.8,"y":80.4,"n":834.0},{"x":6.7,"y":85.0,"n":834.0},{"x":6.7,"y":84.1,"n":834.0},{"x":6.2,"y":80.3,"n":834.0},{"x":5.9,"y":80.4,"n":834.0},{"x":5.5,"y":81.9,"n":834.0},{"x":6.0,"y":82.5,"n":834.0},{"x":6.2,"y":81.7,"n":834.0},{"x":5.7,"y":86.1,"n":834.0},{"x":6.1,"y":84.5,"n":834.0},{"x":6.0,"y":84.5,"n":835.0},{"x":5.7,"y":88.5,"n":834.0},{"x":5.7,"y":89.4,"n":834.0},{"x":5.9,"y":89.2,"n":834.0},{"x":5.9,"y":89.1,"n":833.0},{"x":6.1,"y":89.0,"n":833.0},{"x":7.1,"y":86.7,"n":834.0},{"x":8.6,"y":79.9,"n":835.0},{"x":9.2,"y":79.0,"n":836.0},{"x":8.9,"y":82.4,"n":836.0},{"x":9.4,"y":84.6,"n":838.0},{"x":11.4,"y":72.8,"n":840.0},{"x":10.4,"y":74.7,"n":837.0},{"x":10.6,"y":70.8,"n":837.0},{"x":11.1,"y":69.6,"n":837.0},{"x":10.7,"y":70.8,"n":837.0},{"x":9.9,"y":74.3,"n":835.0},{"x":11.5,"y":65.2,"n":836.0},{"x":9.1,"y":78.2,"n":835.0},{"x":8.6,"y":76.2,"n":835.0},{"x":7.4,"y":88.5,"n":835.0},{"x":7.0,"y":88.4,"n":835.0},{"x":5.0,"y":84.3,"n":834.0},{"x":3.9,"y":83.9,"n":834.0},{"x":5.7,"y":83.4,"n":834.0},{"x":6.2,"y":80.6,"n":833.0},{"x":4.8,"y":78.7,"n":834.0},{"x":4.5,"y":81.0,"n":835.0},{"x":5.0,"y":80.5,"n":835.0},{"x":5.0,"y":83.1,"n":835.0},{"x":5.3,"y":83.3,"n":835.0},{"x":5.4,"y":83.3,"n":835.0},{"x":4.7,"y":83.9,"n":836.0},{"x":4.3,"y":84.5,"n":836.0},{"x":3.8,"y":84.5,"n":835.0},{"x":8.5,"y":74.9,"n":835.0},{"x":10.2,"y":66.3,"n":836.0},{"x":11.7,"y":62.4,"n":842.0},{"x":12.8,"y":60.5,"n":838.0},{"x":13.6,"y":59.9,"n":836.0},{"x":13.9,"y":61.9,"n":837.0},{"x":13.4,"y":60.2,"n":835.0},{"x":12.6,"y":67.3,"n":836.0},{"x":11.4,"y":71.8,"n":834.0},{"x":10.0,"y":79.5,"n":836.0},{"x":9.5,"y":78.2,"n":835.0},{"x":16.7,"y":62.2,"n":840.0},{"x":9.2,"y":85.6,"n":839.0},{"x":5.4,"y":87.1,"n":860.0},{"x":5.1,"y":87.2,"n":852.0},{"x":5.4,"y":88.2,"n":846.0},{"x":6.0,"y":90.0,"n":849.0},{"x":5.3,"y":89.9,"n":849.0},{"x":5.0,"y":88.0,"n":849.0},{"x":5.3,"y":91.2,"n":849.0},{"x":5.3,"y":89.3,"n":848.0},{"x":5.8,"y":88.6,"n":849.0},{"x":5.8,"y":87.0,"n":848.0},{"x":5.2,"y":88.8,"n":848.0},{"x":5.0,"y":88.2,"n":847.0},{"x":4.3,"y":89.4,"n":847.0},{"x":5.5,"y":87.3,"n":847.0},{"x":5.4,"y":86.1,"n":847.0},{"x":5.7,"y":82.7,"n":846.0},{"x":8.6,"y":73.8,"n":844.0},{"x":10.5,"y":65.6,"n":841.0},{"x":12.0,"y":61.6,"n":852.0},{"x":10.3,"y":67.3,"n":846.0},{"x":10.8,"y":69.0,"n":847.0},{"x":13.0,"y":63.9,"n":846.0},{"x":12.8,"y":65.2,"n":848.0},{"x":14.1,"y":67.2,"n":842.0},{"x":13.8,"y":64.3,"n":844.0},{"x":11.7,"y":71.8,"n":843.0},{"x":9.6,"y":78.5,"n":844.0},{"x":14.4,"y":68.3,"n":853.0},{"x":11.2,"y":75.5,"n":847.0},{"x":9.0,"y":78.8,"n":852.0},{"x":7.7,"y":81.8,"n":852.0},{"x":7.1,"y":82.5,"n":852.0},{"x":6.0,"y":85.6,"n":851.0},{"x":5.1,"y":89.3,"n":851.0},{"x":4.1,"y":91.1,"n":849.0},{"x":4.4,"y":87.7,"n":849.0},{"x":3.0,"y":84.0,"n":848.0},{"x":1.6,"y":84.9,"n":847.0},{"x":1.5,"y":89.4,"n":848.0},{"x":1.5,"y":90.7,"n":847.0},{"x":1.9,"y":90.7,"n":847.0},{"x":1.4,"y":89.4,"n":847.0},{"x":1.5,"y":88.9,"n":847.0},{"x":1.3,"y":88.7,"n":846.0},{"x":3.1,"y":88.1,"n":846.0},{"x":6.5,"y":80.8,"n":846.0},{"x":8.3,"y":73.2,"n":846.0},{"x":10.2,"y":70.9,"n":846.0},{"x":12.0,"y":65.6,"n":849.0},{"x":12.5,"y":63.4,"n":849.0}]};
 
 const labels = D.daily.map(d => d.d);
 let mainChart, scatterChart;
-let hidrotamboMap = null;
-let hidrotamboTileLayer = null;
-let hidrotamboMarker = null;
-
-function showMapStatus(msg, visible=true) {
-  const el = document.getElementById('mapStatus');
-  if (!el) return;
-  el.innerHTML = msg;
-  el.style.display = visible ? 'block' : 'none';
-}
-
-function loadLeafletFallback(callback) {
-  if (window.L) { callback(); return; }
-  showMapStatus('Cargando Leaflet para activar el mapa interactivo...');
-
-  if (!document.getElementById('leafletCssFallback')) {
-    const css = document.createElement('link');
-    css.id = 'leafletCssFallback';
-    css.rel = 'stylesheet';
-    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
-    document.head.appendChild(css);
-  }
-
-  const existing = document.getElementById('leafletJsFallback');
-  if (existing) return;
-
-  const js = document.createElement('script');
-  js.id = 'leafletJsFallback';
-  js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
-  js.onload = callback;
-  js.onerror = () => showMapStatus('No se pudo cargar Leaflet. Revise la conexión a internet o pruebe abrir el archivo desde GitHub Pages.');
-  document.body.appendChild(js);
-}
-
-function initHidrotamboMap() {
-  if (hidrotamboMap) return;
-  if (!window.L) { loadLeafletFallback(initHidrotamboMap); return; }
-
-  const lat = STATION.lat;
-  const lon = STATION.lon;
-  const mapEl = document.getElementById('hidrotamboMap');
-  if (!mapEl) return;
-
-  showMapStatus('Cargando mapa OpenStreetMap...', true);
-
-  hidrotamboMap = L.map(mapEl, {
-    center: [lat, lon],
-    zoom: 15,
-    minZoom: 3,
-    maxZoom: 19,
-    scrollWheelZoom: true,
-    zoomControl: true,
-    preferCanvas: true
-  });
-
-  hidrotamboTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    crossOrigin: true,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(hidrotamboMap);
-
-  hidrotamboTileLayer.on('load', () => showMapStatus('', false));
-  hidrotamboTileLayer.on('tileerror', () => {
-    showMapStatus('El mapa base no cargó completamente. Puede moverse y hacer zoom; si persiste, revise internet o abra el enlace OSM.');
-  });
-
-  const icon = L.divIcon({
-    html: '<div class="station-marker" aria-hidden="true"></div>',
-    className: 'station-marker-wrap',
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-    popupAnchor: [0, -28]
-  });
-
-  hidrotamboMarker = L.marker([lat, lon], {icon}).addTo(hidrotamboMap)
-    .bindPopup('<strong>Estación HidroTambo</strong><br>2°25\'44.9&quot;S · 78°52\'17.1&quot;W<br>Lat: -2.429139 · Lon: -78.871417')
-    .openPopup();
-
-  L.circle([lat, lon], {
-    radius: 120,
-    color: '#e5b935',
-    weight: 2,
-    opacity: 0.75,
-    fillColor: '#e5b935',
-    fillOpacity: 0.10
-  }).addTo(hidrotamboMap);
-
-  if (window.ResizeObserver) {
-    const ro = new ResizeObserver(() => {
-      if (hidrotamboMap) hidrotamboMap.invalidateSize();
-    });
-    ro.observe(mapEl);
-  }
-
-  setTimeout(() => {
-    hidrotamboMap.invalidateSize(true);
-    hidrotamboMap.setView([lat, lon], 15);
-  }, 350);
-}
-
-function refreshHidrotamboMap() {
-  initHidrotamboMap();
-  setTimeout(() => {
-    if (hidrotamboMap) {
-      hidrotamboMap.invalidateSize(true);
-      hidrotamboMap.setView([STATION.lat, STATION.lon], 15);
-      if (hidrotamboMarker) hidrotamboMarker.openPopup();
-    }
-  }, 450);
-}
-
 
 function mkMain(key) {
   if (mainChart) mainChart.destroy();
@@ -426,23 +85,23 @@ function mkMain(key) {
     const anomThr = D.anomalias.nivel_2std;
     const pts = D.daily.map(d => d.n >= anomThr ? {x: d.d, y: d.n} : null).filter(Boolean);
     cfg = {type:'line', data:{labels, datasets:[
-      {label:'Rango',data:D.daily.map(d=>d.nmax-d.nmin),fill:false,borderColor:'transparent',backgroundColor:'rgba(111,168,220,0.26)',borderWidth:0,pointRadius:0,tension:0.3},
-      {label:'Nivel medio',data:D.daily.map(d=>d.n),borderColor:'#1f6aa5',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3},
-      {label:'Anomalía',data:pts,type:'scatter',borderColor:'#ff716e',backgroundColor:'#ff716e',pointRadius:4,showLine:false}
-    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label,label:i=>`${i.dataset.label}: ${Math.round(i.raw.y||i.raw)} mm`}}},scales:{x:{ticks:{maxTicksLimit:8,color:'#8e918c'},grid:{display:false}},y:{ticks:{color:'#8e918c'},title:{display:true,text:'mm',color:'#8e918c',font:{size:11}}}}}};
+      {label:'Rango',data:D.daily.map(d=>d.nmax-d.nmin),fill:false,borderColor:'transparent',backgroundColor:'rgba(181,212,244,0.35)',borderWidth:0,pointRadius:0,tension:0.3},
+      {label:'Nivel medio',data:D.daily.map(d=>d.n),borderColor:'#185FA5',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3},
+      {label:'Anomalía',data:pts,type:'scatter',borderColor:'#E24B4A',backgroundColor:'#E24B4A',pointRadius:4,showLine:false}
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>i[0].label,label:i=>`${i.dataset.label}: ${Math.round(i.raw.y||i.raw)} mm`}}},scales:{x:{ticks:{maxTicksLimit:8,color:'#888'},grid:{display:false}},y:{ticks:{color:'#888'},title:{display:true,text:'mm',color:'#888',font:{size:11}}}}}};
   } else if (key === 'temp') {
     cfg = {type:'line', data:{labels, datasets:[
-      {label:'Máx',data:D.daily.map(d=>d.tmax),borderColor:'rgba(199,131,21,0.45)',backgroundColor:'transparent',borderWidth:1,pointRadius:0,tension:0.3,borderDash:[4,3]},
-      {label:'Media',data:D.daily.map(d=>d.t),borderColor:'#c78315',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.3},
-      {label:'Mín',data:D.daily.map(d=>d.tmin),borderColor:'rgba(199,131,21,0.45)',backgroundColor:'transparent',borderWidth:1,pointRadius:0,tension:0.3,borderDash:[4,3]}
-    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#8e918c'},grid:{display:false}},y:{ticks:{color:'#8e918c'},title:{display:true,text:'°C',color:'#8e918c',font:{size:11}}}}}};
+      {label:'Máx',data:D.daily.map(d=>d.tmax),borderColor:'rgba(186,117,23,0.4)',backgroundColor:'transparent',borderWidth:1,pointRadius:0,tension:0.3,borderDash:[4,3]},
+      {label:'Media',data:D.daily.map(d=>d.t),borderColor:'#BA7517',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.3},
+      {label:'Mín',data:D.daily.map(d=>d.tmin),borderColor:'rgba(186,117,23,0.4)',backgroundColor:'transparent',borderWidth:1,pointRadius:0,tension:0.3,borderDash:[4,3]}
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#888'},grid:{display:false}},y:{ticks:{color:'#888'},title:{display:true,text:'°C',color:'#888',font:{size:11}}}}}};
   } else if (key === 'lluvia') {
-    cfg = {type:'bar', data:{labels, datasets:[{label:'Lluvia',data:D.daily.map(d=>d.r),backgroundColor:D.daily.map(d=>d.r>15?'#ff716e':d.r>5?'#1f6aa5':'rgba(31,106,165,0.55)'),borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#8e918c'},grid:{display:false}},y:{ticks:{color:'#8e918c'},title:{display:true,text:'mm',color:'#8e918c',font:{size:11}}}}}};
+    cfg = {type:'bar', data:{labels, datasets:[{label:'Lluvia',data:D.daily.map(d=>d.r),backgroundColor:D.daily.map(d=>d.r>15?'#E24B4A':d.r>5?'#185FA5':'rgba(56,138,221,0.5)'),borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#888'},grid:{display:false}},y:{ticks:{color:'#888'},title:{display:true,text:'mm',color:'#888',font:{size:11}}}}}};
   } else {
     cfg = {type:'line', data:{labels, datasets:[
       {label:'V mín',data:D.daily.map(d=>d.vmin),borderColor:'rgba(226,75,74,0.5)',backgroundColor:'transparent',borderWidth:1,pointRadius:0,tension:0.3,borderDash:[3,3]},
-      {label:'V medio',data:D.daily.map(d=>d.v),borderColor:'#147563',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.3}
-    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#8e918c'},grid:{display:false}},y:{min:12.4,ticks:{color:'#8e918c'},title:{display:true,text:'V',color:'#8e918c',font:{size:11}}}}}};
+      {label:'V medio',data:D.daily.map(d=>d.v),borderColor:'#0F6E56',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0.3}
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:'#888'},grid:{display:false}},y:{min:12.4,ticks:{color:'#888'},title:{display:true,text:'V',color:'#888',font:{size:11}}}}}};
   }
   mainChart = new Chart(ctx, cfg);
 }
@@ -458,36 +117,21 @@ function mkScatter() {
     else mid.push(pt);
   });
   scatterChart = new Chart(ctx, {type:'scatter', data:{datasets:[
-    {label:'Nivel bajo (<900mm)',data:low,backgroundColor:'rgba(31,106,165,0.68)',pointRadius:3},
-    {label:'Nivel medio',data:mid,backgroundColor:'rgba(142,145,140,0.45)',pointRadius:2},
-    {label:'Nivel alto (>1000mm)',data:high,backgroundColor:'rgba(20,117,99,0.7)',pointRadius:3}
-  ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>`T:${i.raw.x}°C  H:${i.raw.y}%`}}},scales:{x:{title:{display:true,text:'Temperatura (°C)',color:'#8e918c',font:{size:11}},ticks:{color:'#8e918c'}},y:{title:{display:true,text:'Humedad (%)',color:'#8e918c',font:{size:11}},ticks:{color:'#8e918c'}}}}});
+    {label:'Nivel bajo (<900mm)',data:low,backgroundColor:'rgba(24,95,165,0.5)',pointRadius:3},
+    {label:'Nivel medio',data:mid,backgroundColor:'rgba(136,135,128,0.4)',pointRadius:2},
+    {label:'Nivel alto (>1000mm)',data:high,backgroundColor:'rgba(15,110,86,0.6)',pointRadius:3}
+  ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>`T:${i.raw.x}°C  H:${i.raw.y}%`}}},scales:{x:{title:{display:true,text:'Temperatura (°C)',color:'#888',font:{size:11}},ticks:{color:'#888'}},y:{title:{display:true,text:'Humedad (%)',color:'#888',font:{size:11}},ticks:{color:'#888'}}}}});
 }
 
-function setTab(key, el) {
+function setTab(key) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  if (el) el.classList.add('active');
-  const mainPanel = document.getElementById('mainDashboardPanel');
-  const geoPanel = document.getElementById('geoPanel');
-  const reportPanel = document.getElementById('reportPanel');
-  mainPanel.style.display = 'none';
-  geoPanel.style.display = 'none';
-  reportPanel.style.display = 'none';
-  if (key === 'geo') {
-    geoPanel.style.display = 'block';
-    refreshHidrotamboMap();
-    return;
-  }
-  if (key === 'report') {
-    reportPanel.style.display = 'block';
-    return;
-  }
-  mainPanel.style.display = 'block';
-  const titles = {nivel:'Nivel hídrico diario (mm)',temp:'Temperatura diaria (°C)',lluvia:'Lluvia diaria (mm)'};
+  event.target.classList.add('active');
+  const titles = {nivel:'Nivel hídrico diario (mm)',temp:'Temperatura diaria (°C)',lluvia:'Lluvia diaria (mm)',voltaje:'Voltaje del sensor (V)'};
   const legends = {
-    nivel:'<span><span class="legend-dot" style="background:#1f6aa5"></span>Nivel medio</span><span><span class="legend-dot" style="background:#6fa8dc"></span>Rango</span><span><span class="legend-dot" style="background:#ff716e;border-radius:50%"></span>Anomalía (&gt;2σ)</span>',
-    temp:'<span><span class="legend-dot" style="background:#c78315"></span>Media</span><span><span class="legend-dot" style="background:rgba(199,131,21,0.45)"></span>Min/Máx</span>',
-    lluvia:'<span><span class="legend-dot" style="background:rgba(31,106,165,0.55)"></span>Normal</span><span><span class="legend-dot" style="background:#1f6aa5"></span>&gt;5mm</span><span><span class="legend-dot" style="background:#ff716e"></span>&gt;15mm</span>'
+    nivel:'<span><span class="legend-dot" style="background:#185FA5"></span>Nivel medio</span><span><span class="legend-dot" style="background:#B5D4F4"></span>Rango</span><span><span class="legend-dot" style="background:#E24B4A;border-radius:50%"></span>Anomalía (&gt;2σ)</span>',
+    temp:'<span><span class="legend-dot" style="background:#BA7517"></span>Media</span><span><span class="legend-dot" style="background:rgba(186,117,23,0.4)"></span>Min/Máx</span>',
+    lluvia:'<span><span class="legend-dot" style="background:rgba(56,138,221,0.5)"></span>Normal</span><span><span class="legend-dot" style="background:#185FA5"></span>&gt;5mm</span><span><span class="legend-dot" style="background:#E24B4A"></span>&gt;15mm</span>',
+    voltaje:'<span><span class="legend-dot" style="background:#0F6E56"></span>V medio</span><span><span class="legend-dot" style="background:rgba(226,75,74,0.5)"></span>V mínimo</span>'
   };
   document.getElementById('main-title').textContent = titles[key];
   document.getElementById('main-legend').innerHTML = legends[key];
@@ -497,163 +141,19 @@ function setTab(key, el) {
 function buildAnomalias() {
   const list = document.getElementById('anomalias-list');
   let html = '';
-  const tempHigh = D.daily.filter(d => d.tmax >= 18).slice(0,3);
-  const tempLow = D.daily.filter(d => d.tmin <= 0).slice(0,3);
-  tempHigh.forEach(a => {
-    html += `<div class="alert red"><i class="ti ti-temperature-sun" aria-hidden="true"></i><div><strong>Temperatura alta</strong>${a.d} — ${a.tmax} °C</div></div>`;
-  });
-  tempLow.forEach(a => {
-    html += `<div class="alert amber"><i class="ti ti-snowflake" aria-hidden="true"></i><div><strong>Temperatura baja</strong>${a.d} — ${a.tmin} °C</div></div>`;
-  });
-  D.anomalias.nivel.slice(0,4).forEach(a => {
-    html += `<div class="alert red"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Nivel alto</strong>${a[0]} — ${a[1]} mm</div></div>`;
+  D.anomalias.nivel.slice(0,5).forEach(a => {
+    html += `<div class="alert red"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Nivel alto</strong><br>${a[0]} — ${a[1]} mm</div></div>`;
   });
   D.anomalias.lluvia.slice(0,4).forEach(a => {
-    html += `<div class="alert amber"><i class="ti ti-cloud-storm" aria-hidden="true"></i><div><strong>Intensidad extrema</strong>${a[0]} — ${a[1]} mm/h</div></div>`;
+    html += `<div class="alert amber"><i class="ti ti-cloud-storm" aria-hidden="true"></i><div><strong>Intensidad extrema</strong><br>${a[0]} — ${a[1]} mm/h</div></div>`;
+  });
+  D.anomalias.voltaje.slice(0,2).forEach(a => {
+    html += `<div class="alert amber"><i class="ti ti-battery-1" aria-hidden="true"></i><div><strong>Voltaje bajo</strong><br>${a[0]} — ${a[1]} V</div></div>`;
   });
   list.innerHTML = html;
 }
-
-const STATION = {
-  name:'Estación HidroTambo',
-  lat:-2.429139,
-  lon:-78.871417,
-  coordsDms:'2°25\'44.9"S, 78°52\'17.1"W'
-};
-function addChatMessage(text, who='bot') {
-  const w = document.getElementById('chatWindow');
-  const div = document.createElement('div');
-  div.className = 'msg ' + who;
-  div.innerHTML = text;
-  w.appendChild(div);
-  w.scrollTop = w.scrollHeight;
-}
-function geoAnswer(q) {
-  const t = (q || '').toLowerCase();
-  const maxLevelDay = D.daily.reduce((a,b)=> b.n > a.n ? b : a, D.daily[0]);
-  const maxRainDay = D.daily.reduce((a,b)=> b.r > a.r ? b : a, D.daily[0]);
-  const minTempDay = D.daily.reduce((a,b)=> b.tmin < a.tmin ? b : a, D.daily[0]);
-  const maxTempDay = D.daily.reduce((a,b)=> b.tmax > a.tmax ? b : a, D.daily[0]);
-  if (t.includes('ubic') || t.includes('coorden') || t.includes('mapa')) {
-    return `<strong>${STATION.name}</strong> está registrada en <strong>${STATION.coordsDms}</strong>, equivalente a latitud <strong>${STATION.lat.toFixed(6)}</strong> y longitud <strong>${STATION.lon.toFixed(6)}</strong>. Use los botones del mapa para abrir la ubicación en Google Maps u OpenStreetMap.`;
-  }
-  if (t.includes('anom') || t.includes('alert')) {
-    return `En el período analizado se observan anomalías relevantes en <strong>nivel</strong>, <strong>lluvia</strong> y <strong>temperatura</strong>. El nivel supera el umbral de anomalía alrededor del <strong>2026-02-02</strong>; la lluvia presenta intensidades altas, por ejemplo <strong>${D.anomalias.lluvia[0][1]} mm/h</strong> el <strong>${D.anomalias.lluvia[0][0]}</strong>; y la temperatura tuvo extremos entre <strong>${D.stats.t_min} °C</strong> y <strong>${D.stats.t_max} °C</strong>.`;
-  }
-  if (t.includes('lluv') || t.includes('precipit')) {
-    return `La lluvia acumulada del período es de <strong>${D.stats.total_lluvia} mm</strong>, con <strong>${D.stats.lluvia_dias} días con lluvia</strong>. El mayor acumulado diario fue de <strong>${maxRainDay.r} mm</strong> el <strong>${maxRainDay.d}</strong>. La intensidad máxima registrada en la base es de <strong>${D.stats.max_intensidad} mm/h</strong>.`;
-  }
-  if (t.includes('nivel') || t.includes('hídr') || t.includes('hidric') || t.includes('agua')) {
-    return `El nivel medio de la estación es de <strong>${Math.round(D.stats.n_mean)} mm</strong> y el máximo del período fue de <strong>${Math.round(D.stats.n_max)} mm</strong>. El día con mayor nivel medio fue <strong>${maxLevelDay.d}</strong>, con aproximadamente <strong>${Math.round(maxLevelDay.n)} mm</strong>.`;
-  }
-  if (t.includes('temp') || t.includes('frio') || t.includes('calor')) {
-    return `La temperatura media es de <strong>${D.stats.t_mean} °C</strong>. El valor mínimo fue <strong>${D.stats.t_min} °C</strong> el <strong>${minTempDay.d}</strong>, y el máximo fue <strong>${D.stats.t_max} °C</strong> el <strong>${maxTempDay.d}</strong>.`;
-  }
-  if (t.includes('resumen') || t.includes('estado') || t.includes('general') || t.trim()==='') {
-    return `<strong>Resumen de ${STATION.name}:</strong> estación hidrometeorológica ubicada en ${STATION.coordsDms}. El dashboard integra <strong>${D.stats.total_days} días</strong> y <strong>${D.stats.total_records.toLocaleString('es-EC')}</strong> registros. Promedios principales: temperatura <strong>${D.stats.t_mean} °C</strong>, humedad <strong>${D.stats.h_mean}%</strong>, nivel <strong>${Math.round(D.stats.n_mean)} mm</strong> y lluvia total <strong>${D.stats.total_lluvia} mm</strong>.`;
-  }
-  return `Puedo ayudarle con ubicación, coordenadas, resumen, anomalías, lluvia, nivel hídrico y temperatura de <strong>${STATION.name}</strong>. Pruebe preguntando: “¿cuál fue el nivel máximo?”, “resumen de lluvia” o “anomalías detectadas”.`;
-}
-function askGeo(preset) {
-  const input = document.getElementById('geoQuestion');
-  const q = preset || input.value.trim();
-  const label = preset ? preset.charAt(0).toUpperCase() + preset.slice(1) : q;
-  if (label) addChatMessage(label, 'user');
-  addChatMessage(geoAnswer(q || 'resumen'), 'bot');
-  input.value = '';
-}
-
-Chart.defaults.color = '#b9bab5';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.045)';
-Chart.defaults.font.family = 'Inter, Segoe UI, Roboto, Arial, sans-serif';
-
-
-let reportCharts = [];
-function fmt(n, d=1){ return Number(n).toLocaleString('es-EC',{maximumFractionDigits:d,minimumFractionDigits:d}); }
-function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
-function std(arr){ const m=mean(arr); return Math.sqrt(arr.reduce((a,b)=>a+(b-m)*(b-m),0)/arr.length); }
-function percentile(arr, p){ const s=[...arr].sort((a,b)=>a-b); const i=(s.length-1)*p; const lo=Math.floor(i), hi=Math.ceil(i); return lo===hi?s[lo]:s[lo]+(s[hi]-s[lo])*(i-lo); }
-function pearson(a,b){ const pairs=a.map((v,i)=>[v,b[i]]).filter(x=>isFinite(x[0])&&isFinite(x[1])); if(pairs.length<3) return 0; const x=pairs.map(p=>p[0]), y=pairs.map(p=>p[1]); const mx=mean(x), my=mean(y); let num=0, dx=0, dy=0; for(let i=0;i<x.length;i++){ const vx=x[i]-mx, vy=y[i]-my; num+=vx*vy; dx+=vx*vx; dy+=vy*vy; } return num/Math.sqrt(dx*dy); }
-function maxConsecutive(test){ let max=0, cur=0; D.daily.forEach(d=>{ if(test(d)){ cur++; max=Math.max(max,cur); } else cur=0; }); return max; }
-function movingRain(days){ return D.daily.map((d,i)=>{ let s=0; for(let j=Math.max(0,i-days+1); j<=i; j++) s+=D.daily[j].r; return s; }); }
-function destroyReportCharts(){ reportCharts.forEach(c=>c.destroy()); reportCharts=[]; }
-function makeReportChart(id, cfg){ const el=document.getElementById(id); if(!el) return; const chart=new Chart(el.getContext('2d'),cfg); reportCharts.push(chart); }
-function getHydroMetrics(){
-  const levels=D.daily.map(d=>d.n), rains=D.daily.map(d=>d.r), temps=D.daily.map(d=>d.t), tmins=D.daily.map(d=>d.tmin), tmaxs=D.daily.map(d=>d.tmax);
-  const maxLevelDay=D.daily.reduce((a,b)=>b.n>a.n?b:a,D.daily[0]);
-  const minLevelDay=D.daily.reduce((a,b)=>b.n<a.n?b:a,D.daily[0]);
-  const maxRainDay=D.daily.reduce((a,b)=>b.r>a.r?b:a,D.daily[0]);
-  const maxTempDay=D.daily.reduce((a,b)=>b.tmax>a.tmax?b:a,D.daily[0]);
-  const minTempDay=D.daily.reduce((a,b)=>b.tmin<a.tmin?b:a,D.daily[0]);
-  const p75=percentile(levels,.75), p90=percentile(levels,.90), p95=percentile(levels,.95), r90=percentile(rains,.90);
-  const levelChanges=D.daily.map((d,i)=>i?d.n-D.daily[i-1].n:0);
-  const maxRise=Math.max(...levelChanges), maxRiseDay=D.daily[levelChanges.indexOf(maxRise)];
-  const rain3=movingRain(3), r1=pearson(rains,levels), r3=pearson(rain3,levels);
-  const highLevelDays=D.daily.filter(d=>d.n>=p95).length;
-  const intenseRainDays=D.daily.filter(d=>d.r>=r90 && d.r>0).length;
-  const dryMax=maxConsecutive(d=>d.r===0), wetMax=maxConsecutive(d=>d.r>0);
-  let status='Normal', cls='status-normal';
-  if (maxLevelDay.n>=p95 || maxRise>=50 || maxRainDay.r>=r90) { status='Vigilancia'; cls='status-watch'; }
-  if (D.daily.some(d=>d.n>=D.anomalias.nivel_2std) || maxRainDay.r>=20 || maxRise>=100) { status='Alerta exploratoria'; cls='status-alert'; }
-  return {levels,rains,temps,tmins,tmaxs,maxLevelDay,minLevelDay,maxRainDay,maxTempDay,minTempDay,p75,p90,p95,r90,levelChanges,maxRise,maxRiseDay,r1,r3,highLevelDays,intenseRainDays,dryMax,wetMax,status,cls,rain3};
-}
-function generateHydroReport(){
-  const m=getHydroMetrics();
-  document.getElementById('reportPreview').style.display='block';
-  document.getElementById('printReportBtn').disabled=false;
-  document.getElementById('downloadReportBtn').disabled=false;
-  document.getElementById('reportMeta').innerHTML = `<strong>Estación:</strong> HidroTambo · <strong>Coordenadas:</strong> ${STATION.coordsDms} (${STATION.lat.toFixed(6)}, ${STATION.lon.toFixed(6)}) · <strong>Período:</strong> ${D.daily[0].d} a ${D.daily[D.daily.length-1].d} · <strong>Días:</strong> ${D.stats.total_days}`;
-  document.getElementById('reportStatusLine').innerHTML = `<span class="status-pill ${m.cls}"><i class="ti ti-activity"></i> Estado del período: ${m.status}</span>`;
-  const kpis=[
-    ['Nivel medio', `${Math.round(D.stats.n_mean)} mm`, `Máx. ${Math.round(D.stats.n_max)} mm`],
-    ['Lluvia acumulada', `${fmt(D.stats.total_lluvia,1)} mm`, `${D.stats.lluvia_dias} días con lluvia`],
-    ['Temperatura media', `${fmt(D.stats.t_mean,1)} °C`, `Rango ${D.stats.t_min} a ${D.stats.t_max} °C`],
-    ['Días secos consecutivos', `${m.dryMax}`, 'racha máxima sin lluvia'],
-    ['Correlación lluvia-nivel', `${fmt(m.r1,2)}`, `r 3 días: ${fmt(m.r3,2)}`]
-  ];
-  document.getElementById('reportKpis').innerHTML = kpis.map(k=>`<div class="report-kpi"><div class="rk-lbl">${k[0]}</div><div class="rk-val">${k[1]}</div><div class="rk-sub">${k[2]}</div></div>`).join('');
-  document.getElementById('executiveSummary').innerHTML = `Durante el período analizado, la <strong>Estación HidroTambo</strong> registró un nivel hídrico medio de <strong>${Math.round(D.stats.n_mean)} mm</strong>, con un máximo diario de <strong>${Math.round(m.maxLevelDay.n)} mm</strong> el <strong>${m.maxLevelDay.d}</strong>. La lluvia acumulada fue de <strong>${fmt(D.stats.total_lluvia,1)} mm</strong>, distribuida en <strong>${D.stats.lluvia_dias}</strong> días con lluvia. El evento diario más lluvioso ocurrió el <strong>${m.maxRainDay.d}</strong> con <strong>${fmt(m.maxRainDay.r,1)} mm</strong>. El diagnóstico automático clasifica el período como <strong>${m.status}</strong>, debido a eventos de nivel alto, lluvias intensas y cambios rápidos del nivel.`;
-  document.getElementById('rainLevelText').innerHTML = `La correlación diaria lluvia–nivel es <strong>r = ${fmt(m.r1,2)}</strong>. Al usar lluvia acumulada móvil de 3 días, la correlación es <strong>r = ${fmt(m.r3,2)}</strong>, lo que ayuda a identificar respuesta retardada de la estación frente a eventos de precipitación.`;
-  const diagnosis = m.status.includes('Alerta') ? 'Se observan eventos que superan umbrales exploratorios de nivel o lluvia. Se recomienda revisar en campo los eventos de mayor nivel y validar la respuesta del sensor después de lluvias intensas.' : (m.status==='Vigilancia' ? 'El período presenta condiciones de vigilancia por niveles altos o lluvias relevantes. Conviene revisar la recurrencia de estos eventos y ajustar umbrales locales.' : 'El período se mantiene dentro de condiciones generales normales según los umbrales exploratorios calculados con la base actual.');
-  document.getElementById('hydroDiagnosis').innerHTML = diagnosis;
-  document.getElementById('hydroRecommendations').innerHTML = `
-    <div class="recommendation"><strong>Recomendación 1.</strong> Definir umbrales locales de vigilancia con percentiles 75, 90 y 95 del nivel hídrico.</div>
-    <div class="recommendation"><strong>Recomendación 2.</strong> Verificar eventos donde el nivel aumenta sin lluvia local, porque pueden indicar aportes aguas arriba, represamientos temporales o problemas de sensor.</div>
-    <div class="recommendation"><strong>Recomendación 3.</strong> Incorporar aforos de campo para construir una curva nivel–caudal y convertir el monitoreo de nivel en estimaciones de caudal.</div>`;
-  const events=[];
-  events.push(['Nivel máximo', m.maxLevelDay.d, `${Math.round(m.maxLevelDay.n)} mm`, 'Evento hidrológico principal del período']);
-  events.push(['Lluvia máxima diaria', m.maxRainDay.d, `${fmt(m.maxRainDay.r,1)} mm`, 'Mayor aporte diario de precipitación']);
-  events.push(['Ascenso rápido', m.maxRiseDay.d, `+${fmt(m.maxRise,1)} mm/día`, 'Cambio diario máximo del nivel']);
-  events.push(['Temperatura máxima', m.maxTempDay.d, `${fmt(m.maxTempDay.tmax,1)} °C`, 'Extremo térmico superior']);
-  events.push(['Temperatura mínima', m.minTempDay.d, `${fmt(m.minTempDay.tmin,1)} °C`, 'Extremo térmico inferior']);
-  document.getElementById('reportAnomalyTable').innerHTML = `<table class="report-table"><thead><tr><th>Evento</th><th>Fecha</th><th>Valor</th><th>Interpretación</th></tr></thead><tbody>${events.map(e=>`<tr><td>${e[0]}</td><td>${e[1]}</td><td>${e[2]}</td><td>${e[3]}</td></tr>`).join('')}</tbody></table>`;
-  destroyReportCharts();
-  const gridColor='rgba(255,255,255,.08)', tickColor='#b9bab5';
-  const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:{weight:'bold'}}}},scales:{x:{ticks:{color:tickColor,maxTicksLimit:7},grid:{display:false}},y:{ticks:{color:tickColor},grid:{color:gridColor}}}};
-  makeReportChart('reportRainChart',{type:'bar',data:{labels,datasets:[{label:'Lluvia diaria (mm)',data:m.rains,backgroundColor:m.rains.map(v=>v>=m.r90?'#ff716e':(v>5?'#1f6aa5':'rgba(111,168,220,.55)')),borderWidth:0},{label:'Lluvia acumulada (mm)',data:m.rains.map((v,i)=>m.rains.slice(0,i+1).reduce((a,b)=>a+b,0)),type:'line',borderColor:'#e5b935',backgroundColor:'transparent',borderWidth:2,pointRadius:0,yAxisID:'y1'}]},options:{...common,scales:{...common.scales,y:{...common.scales.y,title:{display:true,text:'Lluvia diaria (mm)',color:tickColor}},y1:{position:'right',ticks:{color:tickColor},grid:{drawOnChartArea:false},title:{display:true,text:'Acumulada (mm)',color:tickColor}}}}});
-  makeReportChart('reportLevelChart',{type:'line',data:{labels,datasets:[{label:'Nivel medio',data:m.levels,borderColor:'#6fa8dc',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:.25},{label:'Percentil 95',data:labels.map(()=>m.p95),borderColor:'#ff716e',borderDash:[5,4],pointRadius:0,borderWidth:1.5}]},options:{...common,scales:{...common.scales,y:{...common.scales.y,title:{display:true,text:'Nivel (mm)',color:tickColor}}}}});
-  makeReportChart('reportRainLevelChart',{type:'scatter',data:{datasets:[{label:'Lluvia diaria vs nivel',data:D.daily.map(d=>({x:d.r,y:d.n})),backgroundColor:'rgba(111,168,220,.65)',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'Lluvia diaria (mm)',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor}},y:{title:{display:true,text:'Nivel medio (mm)',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor}}}}});
-  const sorted=[...m.levels].sort((a,b)=>b-a).map((v,i)=>({x:((i+1)/m.levels.length*100).toFixed(1),y:v}));
-  makeReportChart('reportDurationChart',{type:'line',data:{datasets:[{label:'Permanencia del nivel',data:sorted,borderColor:'#c78315',backgroundColor:'transparent',pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'Porcentaje de excedencia (%)',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor}},y:{title:{display:true,text:'Nivel (mm)',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor}}}}});
-  makeReportChart('reportTempChart',{type:'line',data:{labels,datasets:[{label:'Máxima',data:m.tmaxs,borderColor:'rgba(255,113,110,.75)',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5},{label:'Media',data:m.temps,borderColor:'#e5b935',backgroundColor:'transparent',pointRadius:0,borderWidth:2},{label:'Mínima',data:m.tmins,borderColor:'#6fa8dc',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5}]},options:{...common,scales:{...common.scales,y:{...common.scales.y,title:{display:true,text:'Temperatura (°C)',color:tickColor}}}}});
-  document.getElementById('reportPreview').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function printHydroReport(){ if(document.getElementById('reportPreview').style.display!=='block') generateHydroReport(); setTimeout(()=>window.print(),250); }
-function downloadHydroReportHTML(){
-  if(document.getElementById('reportPreview').style.display!=='block') generateHydroReport();
-  setTimeout(()=>{
-    const clone=document.getElementById('reportPreview').cloneNode(true);
-    clone.querySelectorAll('canvas').forEach((c,i)=>{ const src=document.querySelectorAll('#reportPreview canvas')[i].toDataURL('image/png'); const img=document.createElement('img'); img.src=src; img.style.maxWidth='100%'; img.style.border='1px solid #ddd'; c.parentNode.replaceChild(img,c); });
-    const doc=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte HidroTambo</title><style>body{font-family:Arial,sans-serif;margin:28px;color:#111}h1{margin-bottom:4px}.report-cover,.report-section{border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:14px}.report-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}.report-kpi{border:1px solid #ddd;border-radius:10px;padding:10px}.rk-lbl{font-size:11px;text-transform:uppercase;color:#555}.rk-val{font-size:20px;font-weight:800}.rk-sub{font-size:12px;color:#666}.report-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.report-table{width:100%;border-collapse:collapse}.report-table th,.report-table td{border-bottom:1px solid #ddd;padding:8px;text-align:left}.status-pill{display:inline-block;border-radius:999px;padding:7px 10px;background:#f1f1f1}.recommendation{border-left:4px solid #c78315;background:#f7f7f7;padding:10px;margin-top:8px}@media(max-width:900px){.report-grid2,.report-kpis{grid-template-columns:1fr}}</style></head><body>${clone.innerHTML}</body></html>`;
-    const blob=new Blob([doc],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='reporte_hidrologico_hidrotambo.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-  },300);
-}
-
 
 mkMain('nivel');
 mkScatter();
 buildAnomalias();
 </script>
-</main>
-</body>
-</html>
